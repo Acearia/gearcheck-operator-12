@@ -10,6 +10,7 @@ export interface Equipment {
   kp: string;
   sector: string;
   capacity: string;
+  type: string;
 }
 
 export interface ChecklistItem {
@@ -27,13 +28,31 @@ export const operators: Operator[] = [
   { id: "45678", name: "ANA PEREIRA" },
 ];
 
-// Lista de equipamentos
+// Lista de equipamentos atualizada conforme a imagem
 export const equipments: Equipment[] = [
-  { id: "PONTE01", name: "Ponte 01", kp: "207", sector: "MOLDAGEM", capacity: "10 tons" },
-  { id: "PONTE02", name: "Ponte 02", kp: "208", sector: "MOLDAGEM", capacity: "15 tons" },
-  { id: "GUINDASTE01", name: "Guindaste 01", kp: "301", sector: "ACABAMENTO", capacity: "5 tons" },
-  { id: "GUINDASTE02", name: "Guindaste 02", kp: "302", sector: "ACABAMENTO", capacity: "8 tons" },
-  { id: "ELEVADOR01", name: "Elevador 01", kp: "401", sector: "TRANSPORTE", capacity: "2 tons" },
+  { id: "207", name: "Ponte 01", kp: "207", sector: "MOLDAGEM", capacity: "10 tons", type: "1" },
+  { id: "409", name: "Ponte 02", kp: "409", sector: "DESMOLDAGEM", capacity: "10 tons", type: "1" },
+  { id: "389", name: "Ponte 03", kp: "389", sector: "EXPEDIÇÃO", capacity: "5 tons", type: "1" },
+  { id: "412", name: "Ponte 04", kp: "412", sector: "FUSAO", capacity: "3 tons", type: "1" },
+  { id: "322", name: "Ponte 05", kp: "322", sector: "EXPEDIÇÃO", capacity: "1 ton", type: "1" },
+  { id: "1092", name: "Ponte 06", kp: "1092", sector: "TRATAMENTO TÉRMICO", capacity: "5 tons", type: "1" },
+  { id: "323", name: "Ponte 07", kp: "323", sector: "LINHA DE MOLDAGEM E FECHAMENTO", capacity: "5 e 16 tons", type: "1" },
+  { id: "1325", name: "Ponte 08", kp: "1325", sector: "ACABAMENTO DE PEÇAS", capacity: "8 tons", type: "1" },
+  { id: "1326", name: "Ponte 09", kp: "1326", sector: "FUSAO", capacity: "10 tons", type: "1" },
+  { id: "1327", name: "Ponte 10", kp: "1327", sector: "ACABAMENTO DE PEÇAS", capacity: "2 tons", type: "1" },
+  { id: "1270", name: "Ponte 11", kp: "1270", sector: "ACABAMENTO DE PEÇAS", capacity: "2 tons", type: "1" },
+  { id: "215", name: "Ponte 12", kp: "215", sector: "MACHARIA", capacity: "1 ton", type: "1" },
+  { id: "1804", name: "Ponte 13", kp: "1804", sector: "LINHA DE MOLDAGEM E FECHAMENTO", capacity: "2 tons", type: "1" },
+  { id: "2686", name: "Ponte 14", kp: "2686", sector: "ACABAMENTO DE PEÇAS", capacity: "2 tons", type: "1" },
+  { id: "3031", name: "Ponte 15", kp: "3031", sector: "FUSAO", capacity: "10 tons", type: "1" },
+  { id: "3285", name: "Ponte 18", kp: "3285", sector: "MOLDAGEM", capacity: "1 ton", type: "1" },
+  { id: "5846", name: "Ponte 19", kp: "5846", sector: "ACABAMENTO DE PEÇAS", capacity: "8 tons", type: "1" },
+  { id: "6038", name: "Ponte 20", kp: "6038", sector: "LINHA DE MOLDAGEM E FECHAMENTO", capacity: "10 tons", type: "1" },
+  { id: "6108", name: "Ponte 21", kp: "6108", sector: "ACABAMENTO DE PEÇAS", capacity: "2,5 tons", type: "1" },
+  { id: "352", name: "Talha 19", kp: "352", sector: "SUCATA", capacity: "2 tons", type: "2" },
+  { id: "375", name: "Talha 23", kp: "375", sector: "DESMOLDAGEM", capacity: "1 ton", type: "2" },
+  { id: "3336", name: "Pórtico 01", kp: "3336", sector: "SUCATA", capacity: "5 tons", type: "3" },
+  { id: "909", name: "Talha 11", kp: "909", sector: "FUSAO", capacity: "2 tons", type: "2" },
 ];
 
 // Lista atualizada de verificações de segurança

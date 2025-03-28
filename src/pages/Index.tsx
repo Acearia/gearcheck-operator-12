@@ -110,6 +110,16 @@ const Index = () => {
     setSignature(null);
   };
 
+  // Função para obter o tipo de equipamento em texto
+  const getEquipmentTypeText = (type: string) => {
+    switch (type) {
+      case "1": return "Ponte";
+      case "2": return "Talha";
+      case "3": return "Pórtico";
+      default: return "Outro";
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       {/* Header */}
@@ -168,7 +178,7 @@ const Index = () => {
                 <SelectContent>
                   {equipments.map(equipment => (
                     <SelectItem key={equipment.id} value={equipment.id}>
-                      {equipment.name}
+                      {equipment.name} (KP: {equipment.kp})
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -184,6 +194,18 @@ const Index = () => {
                   <input 
                     type="text" 
                     value={selectedEquipment.kp} 
+                    className="w-full px-4 py-2 border border-gray-300 rounded bg-gray-100" 
+                    readOnly 
+                  />
+                </div>
+
+                <div className="flex items-center">
+                  <span>Tipo</span>
+                </div>
+                <div className="col-span-2">
+                  <input 
+                    type="text" 
+                    value={getEquipmentTypeText(selectedEquipment.type)} 
                     className="w-full px-4 py-2 border border-gray-300 rounded bg-gray-100" 
                     readOnly 
                   />
