@@ -121,9 +121,9 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="min-h-screen flex flex-col bg-white">
       {/* Header */}
-      <header className="bg-teal-700 text-white px-4 py-3 shadow-md flex justify-between items-center">
+      <header className="bg-red-700 text-white px-4 py-3 shadow-md flex justify-between items-center">
         <button className="text-white">
           <X size={24} />
         </button>
@@ -162,6 +162,19 @@ const Index = () => {
                 </Select>
               </div>
             </div>
+            
+            {selectedOperator && (
+              <div className="mt-3 grid grid-cols-1 gap-3">
+                <div className="flex flex-col p-3 bg-blue-50 rounded-md border border-blue-200">
+                  <span className="text-sm text-blue-700 font-semibold">Cargo:</span>
+                  <span className="text-sm">{selectedOperator.cargo || "Não informado"}</span>
+                </div>
+                <div className="flex flex-col p-3 bg-blue-50 rounded-md border border-blue-200">
+                  <span className="text-sm text-blue-700 font-semibold">Setor:</span>
+                  <span className="text-sm">{selectedOperator.setor || "Não informado"}</span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Equipment Selection */}
@@ -241,7 +254,7 @@ const Index = () => {
           {/* Checklist Items */}
           <div className="mt-6 space-y-4">
             {checklist.map(item => (
-              <div key={item.id} className="p-3 bg-white rounded-md shadow-sm">
+              <div key={item.id} className="p-3 bg-white rounded-md shadow-sm border border-gray-200">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div className="text-sm sm:text-base font-medium flex-grow">
                     {item.question}
@@ -269,7 +282,7 @@ const Index = () => {
           </div>
 
           {/* Signature Canvas */}
-          <div className="mt-6 bg-white p-4 rounded-md shadow-sm">
+          <div className="mt-6 bg-white p-4 rounded-md shadow-sm border border-gray-200">
             <SignatureCanvas onSignatureChange={setSignature} />
           </div>
 
@@ -277,7 +290,7 @@ const Index = () => {
           <div className="mt-6 mb-10 flex justify-center">
             <Button 
               type="submit"
-              className="bg-teal-700 hover:bg-teal-800 text-white w-full max-w-xs py-6 text-lg"
+              className="bg-red-700 hover:bg-red-800 text-white w-full max-w-xs py-6 text-lg"
             >
               Enviar Inspeção
             </Button>

@@ -2,6 +2,8 @@
 export interface Operator {
   id: string;
   name: string;
+  cargo?: string;
+  setor?: string;
 }
 
 export interface Equipment {
@@ -19,13 +21,79 @@ export interface ChecklistItem {
   answer: "Sim" | "Não" | "Selecione" | null;
 }
 
-// Lista de operadores
+// Lista de operadores atualizada com os dados da planilha
 export const operators: Operator[] = [
-  { id: "11347", name: "JOSELIO ZIMMERMANN" },
-  { id: "12345", name: "MARIA SILVA" },
-  { id: "23456", name: "JOÃO OLIVEIRA" },
-  { id: "34567", name: "CARLOS SANTOS" },
-  { id: "45678", name: "ANA PEREIRA" },
+  { id: "1260", name: "VALDAIR LAURENTINO", cargo: "OPER. PRODUÇÃO MACHARIA III", setor: "MACHARIA" },
+  { id: "1325", name: "GILMAR OTEMBRAIT", cargo: "INSPETOR QUALIDADE II", setor: "CONTROLE DE QUALIDADE" },
+  { id: "1329", name: "GEISON CRISTIANO SCHEL", cargo: "OPER MAQ MOLD FECH II", setor: "LINHA DE MOLDAGEM E FECHAMENTO" },
+  { id: "1363", name: "FELIPE DALLABONA", cargo: "ANALISTA DE PPCP II", setor: "PROGRAMÇAO PROD." },
+  { id: "1372", name: "ADEMAR GESSER", cargo: "OP. REBARBAÇÃO (OP. ACAB.)III", setor: "REBOLO PENDULAR" },
+  { id: "1377", name: "CELSO DA SILVA PEREIRA", cargo: "TÉCNICO EM SEGURANÇA DO TRABALHO II", setor: "SEG. MEDICINA TRABA." },
+  { id: "1382", name: "SILVERIO BISATTO", cargo: "SOLDADOR II", setor: "SOLDA" },
+  { id: "1413", name: "FABRICIO DALLABONA", cargo: "ENCAR. DE PROD. ACABAMENTO II", setor: "ACABAMENTO DE PEÇAS (I)" },
+  { id: "1422", name: "JOSE MARINO REICHERT", cargo: "OP. REBARBAÇÃO (OP. ACAB.)III", setor: "REBOLO PENDULAR" },
+  { id: "1423", name: "JOSE PEREIRA", cargo: "INSPETOR QUALIDADE IV", setor: "CONTROLE DE QUALIDADE" },
+  { id: "1429", name: "EDILSON NEVES MOTTA", cargo: "INSPETOR QUALIDADE II", setor: "CONTROLE DE QUALIDADE" },
+  { id: "1430", name: "REGINALDO VALERIANO DOS SANTOS", cargo: "OP. COR. CANAL (MAÇARIQ.) III", setor: "CORTE DE CANAL MAÇARICO" },
+  { id: "1437", name: "ANDERSON LUIS ONEDA", cargo: "MODELADOR III", setor: "MODELARIA" },
+  { id: "1446", name: "JOAO CARLOS VANELLI", cargo: "OP. COR. CANAL (MAÇARIQ.) III", setor: "CORTE DE CANAL MAÇARICO" },
+  { id: "1463", name: "RAFAEL CLEMENTE ESPIG", cargo: "OPER. PRODUÇÃO MACHARIA III", setor: "MACHARIA" },
+  { id: "1475", name: "MARCELO RAMOS", cargo: "MECÂNICO MANUTENÇÃO III", setor: "MANUTENÇAO MECANICA" },
+  { id: "1478", name: "ADENOR REICHELT", cargo: "OPER. DE FORNO A INDUÇÃO III", setor: "FUSAO" },
+  { id: "1479", name: "ADELSIO REICHELT", cargo: "REFRATARISTA II", setor: "FUSAO" },
+  { id: "1488", name: "EDIVAN VELOZO", cargo: "INSPETOR QUALIDADE II", setor: "CONTROLE DE QUALIDADE" },
+  { id: "1493", name: "ROBERTO CARLOS PEREIRA", cargo: "OPER. PRODUÇÃO MACHARIA III", setor: "MACHARIA" },
+  { id: "1501", name: "EDELBERTO CARLOS GESSER", cargo: "OPERADOR PONTE ROLANTE II", setor: "ACABAMENTO DE PEÇAS" },
+  { id: "1508", name: "OSNI REICHERT", cargo: "INSPETOR QUALIDADE II", setor: "CONTROLE DE QUALIDADE" },
+  { id: "1514", name: "MAURICIO MELCHIORETTO", cargo: "ANALISTA DE PROCESSOS TÉCNICO I", setor: "DEP. TÉCNICO" },
+  { id: "1526", name: "ROGERIO JOSÉ REICHELT", cargo: "OPER. PRODUÇÃO MOLDAGEM III", setor: "MOLDAGEM" },
+  { id: "1529", name: "JOAO MARQUES", cargo: "OPER PROD MOLD FECH III", setor: "LINHA DE MOLDAGEM E FECHAMENTO" },
+  { id: "1536", name: "VALDEMIRO LEPINSKI", cargo: "MECÂNICO MANUTENÇÃO II", setor: "MANUTENÇAO MECANICA" },
+  { id: "1543", name: "GUILHERME LEMKE", cargo: "SUPERVISOR DE USINAGEM", setor: "USINAGEM (I)" },
+  { id: "1546", name: "EDERSON SCABURRI", cargo: "LIDER DA ELETROMECANICA", setor: "MANUTENÇAO ELETRICA" },
+  { id: "1549", name: "SAMUEL FELIPE KREHNKE", cargo: "MECÂNICO MANUTENÇÃO II", setor: "MANUTENÇAO MECANICA" },
+  { id: "1552", name: "JAIME LEPINSKI", cargo: "TORNEIRO MEC. (OPER. USI.)I", setor: "USINAGEM" },
+  { id: "1567", name: "ALANO COSTA BATISTA", cargo: "OPERADOR DE FORNO A INDUÇÃO II", setor: "FUSAO" },
+  { id: "1575", name: "FABIANO SIGNORELLI", cargo: "OPER.TRATAMENTO TÉRMICO I", setor: "TRATAMENTO TÉRMICO" },
+  { id: "1592", name: "ANDERSON DA CUNHA", cargo: "SOLDADOR II", setor: "SOLDA" },
+  { id: "1607", name: "JOCEMAR ROSA DOS SANTOS", cargo: "OPER. PRODUÇÃO MACHARIA III", setor: "MOLDAGEM COLDBOX" },
+  { id: "1618", name: "ROSALVO MACHADO", cargo: "SOLDADOR III", setor: "SOLDA" },
+  { id: "1638", name: "LEONARDO SCHUTZ SCHAUSS", cargo: "OP. DE ESCARFAGEM (OP. ACB)II", setor: "ESCARFAGEM" },
+  { id: "1694", name: "LUIS ANTONIO PEREIRA DO NASCIMENTO", cargo: "ALMOXARIFE DE MODELOS I", setor: "PROGRAMÇAO PROD." },
+  { id: "1739", name: "EDJALMA RICARDO MARIANO", cargo: "OPER. PRODUÇÃO MACHARIA III", setor: "MACHARIA" },
+  { id: "1757", name: "WALLACE ALVES DE JESUS", cargo: "OPER PROD MOLD FECH III", setor: "LINHA DE MOLDAGEM E FECHAMENTO" },
+  { id: "1760", name: "ELOIR RAMALHO", cargo: "INSP. QUALIDADE DIMENSIONAL II", setor: "CONTROLE DE QUALIDADE DIMENSIONAL" },
+  { id: "1776", name: "JOAO CARLOS RODRIGUES", cargo: "OPER. DE JATO (OPER. ACAB.)II", setor: "ROTOJATO" },
+  { id: "1782", name: "ALTOIR FERNANDES DA SILVA", cargo: "OPER. PRODUÇÃO MACHARIA III", setor: "MOLDAGEM COLDBOX" },
+  { id: "1829", name: "ELIEL PEREIRA FERNANDES", cargo: "OPER. PRODUÇÃO MACHARIA IV", setor: "DEP. QUIMICOS E INFLAMAVEIS" },
+  { id: "1832", name: "CARLOS EDUARDO BAADER", cargo: "OPERADOR PONTE ROLANTE II", setor: "LINHA DE MOLDAGEM E FECHAMENTO" },
+  { id: "1898", name: "MAURO SERGIO GONCALVES DA SILVA", cargo: "SOLDADOR III", setor: "SOLDA" },
+  { id: "1899", name: "IZALTINO ALBERTO SOARES", cargo: "MECÂNICO MANUTENÇÃO III", setor: "MANUTENÇAO MECANICA" },
+  { id: "3426", name: "ANDRE LUIS BAADER", cargo: "ELETRICISTA II", setor: "MANUTENÇAO ELETRICA" },
+  { id: "1911", name: "ARLINDO EDUARDO OTEMBRAIT", cargo: "PANELEIRO (OPER. VAZAMENTO)II", setor: "VAZAMENTO" },
+  { id: "1949", name: "EDSON KREUCH", cargo: "ELETRICISTA II", setor: "MANUTENÇAO ELETRICA" },
+  { id: "1956", name: "ALFREDO FIAMONCINI JUNIOR", cargo: "MODELADOR III", setor: "MODELARIA" },
+  { id: "1969", name: "IVAN KRAISCH", cargo: "SUPERVISOR MANUTENÇÃO", setor: "MANUTENÇAO ELETRICA" },
+  { id: "1972", name: "ALTAMIR BORGES", cargo: "MODELADOR III", setor: "MODELARIA" },
+  { id: "1974", name: "MARIO LOTERIO", cargo: "OPER. PRODUÇÃO MACHARIA II", setor: "MACHARIA" },
+  { id: "1982", name: "SIDNEI HABITZREITER", cargo: "OPER PROD MOLD FECH II", setor: "LINHA DE MOLDAGEM E FECHAMENTO" },
+  { id: "1985", name: "GILSON DE CASTRO", cargo: "ENCARREGADO MACHARIA", setor: "MACHARIA (I)" },
+  { id: "1992", name: "CARLOS DOS SANTOS", cargo: "OPER. PRODUÇÃO MOLDAGEM III", setor: "MOLDAGEM" },
+  { id: "2001", name: "ELBERT FERREIRA", cargo: "INSPETOR QUALIDADE III", setor: "CONTROLE DE QUALIDADE" },
+  { id: "2007", name: "LUCIANO LUCAS CAMARGO PEDROSO", cargo: "INSPETOR QUALIDADE II", setor: "CONTROLE DE QUALIDADE" },
+  { id: "2009", name: "LEONEL GONSALES QUIMENES", cargo: "ENCARREGADO DE FUSAO", setor: "FUSÃO (I)" },
+  { id: "2018", name: "JOSE CARLOS PEREIRA", cargo: "OP. REBARBAÇÃO (OP. ACAB.)III", setor: "REBOLO PENDULAR" },
+  { id: "2020", name: "SIDINEY DA SILVA PEREIRA", cargo: "OPER PROD MOLD FECH III", setor: "LINHA DE MOLDAGEM E FECHAMENTO" },
+  { id: "2026", name: "WILSON ANTONIO DA LUZ", cargo: "AUXILIAR SERV. GERAIS I", setor: "SERVIÇOS GERAIS" },
+  { id: "2053", name: "CARLOS SCHNAIDER", cargo: "LIDER DA ELETROMECANICA", setor: "MANUTENÇAO ELETRICA" },
+  { id: "2055", name: "FABIO ESPIG", cargo: "OP. REBARBAÇÃO (OP. ACAB.)III", setor: "REBOLO PENDULAR" },
+  { id: "2548", name: "ELIAS FRANHER", cargo: "OPERADOR PONTE ROLANTE II", setor: "ACABAMENTO DE PEÇAS" },
+  { id: "2721", name: "JOAO PAULO DA COSTA", cargo: "OPER. DE JATO (OPER. ACAB.)II", setor: "JATO GRANALHA" },
+  { id: "2725", name: "MARCELO HENQUE GONÇALVES", cargo: "OPERADOR EMPILHADEIRA III", setor: "EXPEDIÇÃO" },
+  { id: "2726", name: "ALATHAN JHONATAN GONÇALVES PONTES", cargo: "OPER. DE JATO (OPER. ACAB.)II", setor: "JATO GRANALHA" },
+  { id: "2734", name: "MARCELO DE SOUZA CARDOSO", cargo: "OPER. DE FORNO A INDUÇÃO III", setor: "FUSAO" },
+  { id: "2749", name: "LUAN SCHIAVON CASTRO", cargo: "LABORATORISTA I", setor: "LABORATORIO" },
+  { id: "2752", name: "VALDEMIR PEREIRA DE SOUZA", cargo: "OPER. REBARBAÇÃO (OP. ACAB.) II", setor: "PONTA MONTADA" },
 ];
 
 // Lista de equipamentos atualizada conforme a imagem
