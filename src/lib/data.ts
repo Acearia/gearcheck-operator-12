@@ -36,7 +36,7 @@ export const equipments: Equipment[] = [
   { id: "ELEVADOR01", name: "Elevador 01", kp: "401", sector: "TRANSPORTE", capacity: "2 tons" },
 ];
 
-// Lista de verificações de segurança
+// Lista atualizada de verificações de segurança
 export const checklistItems: ChecklistItem[] = [
   { id: "1", question: "Os cabos de aço apresentam fios partidos?", answer: null },
   { id: "2", question: "Os cabos de aço apresentam pontos de amassamento?", answer: null },
@@ -46,6 +46,20 @@ export const checklistItems: ChecklistItem[] = [
   { id: "6", question: "O gancho possui trava de segurança funcionando?", answer: null },
   { id: "7", question: "O gancho possui sinais de alongamento?", answer: null },
   { id: "8", question: "Os ganchos da corrente possuem sinais de desgaste?", answer: null },
-  { id: "9", question: "As travas de segurança dos mosquetões estão funcionando?", answer: null },
-  { id: "10", question: "Os botões de emergência estão funcionando?", answer: null },
+  { id: "9", question: "As travas de segurança dos ganchos estão funcionando?", answer: null },
+  { id: "10", question: "A corrente possui a plaqueta de identificação instalada?", answer: null },
+  { id: "11", question: "As polias estão girando sem dificuldades?", answer: null },
+  { id: "12", question: "A sinalização sonora funciona durante a movimentação?", answer: null },
+  { id: "13", question: "O controle possui botão danificado?", answer: null },
+  { id: "14", question: "O botão de emergência está funcionando?", answer: null },
+  { id: "15", question: "A estrutura possui grandes danos?", answer: null },
+  { id: "16", question: "O sistema de freios do Troller está funcionando?", answer: null },
+  { id: "17", question: "Os elos da corrente possuem sinais de desgaste?", answer: null },
+  { id: "18", question: "Os elos da corrente possuem sinais de 'alargamento'?", answer: null },
+  { id: "19", question: "Os elos da corrente possuem sinais de 'alongamento'?", answer: null },
+  { id: "20", question: "O fim de curso superior está funcionando?", answer: null },
+  { id: "21", question: "O fim de curso inferior está funcionando?", answer: null },
+  { id: "22", question: "O fim de curso direito está funcionando?", answer: null },
+  { id: "23", question: "O fim de curso esquerdo está funcionando?", answer: null },
+  { id: "24", question: "O equipamento apresenta ruídos estranhos?", answer: null },
 ];
