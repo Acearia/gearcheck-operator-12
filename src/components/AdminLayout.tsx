@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { useNavigate, Outlet, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -11,7 +12,8 @@ import {
   Wrench, 
   User, 
   Menu, 
-  X
+  X,
+  ArrowLeft
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -51,6 +53,14 @@ const AdminLayout = () => {
     navigate("/admin/login");
   };
 
+  const handleBackToChecklist = () => {
+    navigate("/");
+    toast({
+      title: "Retornando ao Checklist",
+      description: "Você foi redirecionado para a página de checklist",
+    });
+  };
+
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
   };
@@ -74,15 +84,26 @@ const AdminLayout = () => {
             </button>
             <h1 className="text-xl font-bold">GearCheck Admin</h1>
           </div>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={handleLogout}
-            className="text-white hover:bg-red-800"
-          >
-            <LogOut size={16} className="mr-1" />
-            <span>Sair</span>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleBackToChecklist}
+              className="bg-white text-red-700 hover:bg-red-50 border-white"
+            >
+              <ArrowLeft size={16} className="mr-1" />
+              <span>Voltar ao Checklist</span>
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={handleLogout}
+              className="text-white hover:bg-red-800"
+            >
+              <LogOut size={16} className="mr-1" />
+              <span>Sair</span>
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -103,13 +124,15 @@ const AdminLayout = () => {
               <SidebarLink to="/admin/settings" icon={<Settings size={20} />} label="Configurações" />
             </div>
             <div className="pt-6 mt-6 border-t border-gray-200">
-              <Link 
-                to="/" 
-                className="flex items-center p-2 text-gray-600 rounded-md hover:bg-gray-100"
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleBackToChecklist}
+                className="w-full flex items-center justify-start p-2 text-gray-600 rounded-md hover:bg-gray-100"
               >
                 <Home size={20} className="mr-3" />
-                <span>Voltar ao App</span>
-              </Link>
+                <span>Voltar ao Checklist</span>
+              </Button>
             </div>
           </nav>
         </aside>
