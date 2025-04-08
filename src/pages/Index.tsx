@@ -1,6 +1,7 @@
 
 import React, { useState } from "react";
-import { Check, X, ChevronDown } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Check, X, ChevronDown, Settings } from "lucide-react";
 import { 
   Select, 
   SelectContent, 
@@ -128,9 +129,9 @@ const Index = () => {
           <X size={24} />
         </button>
         <h1 className="font-bold text-lg">Check List Online</h1>
-        <button className="text-white">
-          <Check size={24} />
-        </button>
+        <Link to="/admin/login" className="text-white">
+          <Settings size={24} />
+        </Link>
       </header>
 
       {/* Main Content */}
