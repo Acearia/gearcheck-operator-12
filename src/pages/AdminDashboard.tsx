@@ -1,11 +1,10 @@
-
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
   ClipboardList, 
   AlertTriangle, 
   CheckCircle2, 
-  Tool, 
+  Wrench, 
   User, 
   CalendarClock 
 } from "lucide-react";
@@ -68,7 +67,7 @@ const AdminDashboard = () => {
           title="Equipamentos"
           value="24"
           description="Em operação"
-          icon={<Tool className="h-8 w-8 text-purple-500" />}
+          icon={<Wrench className="h-8 w-8 text-purple-500" />}
         />
         <StatsCard
           title="Operadores"

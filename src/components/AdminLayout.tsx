@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useNavigate, Outlet, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -9,7 +8,7 @@ import {
   Home, 
   LogOut, 
   Settings, 
-  Tool, 
+  Wrench, 
   User, 
   Menu, 
   X
@@ -99,7 +98,7 @@ const AdminLayout = () => {
               <SidebarLink to="/admin" icon={<Home size={20} />} label="Dashboard" />
               <SidebarLink to="/admin/inspections" icon={<ClipboardList size={20} />} label="Inspeções" />
               <SidebarLink to="/admin/operators" icon={<User size={20} />} label="Operadores" />
-              <SidebarLink to="/admin/equipment" icon={<Tool size={20} />} label="Equipamentos" />
+              <SidebarLink to="/admin/equipment" icon={<Wrench size={20} />} label="Equipamentos" />
               <SidebarLink to="/admin/reports" icon={<BarChart3 size={20} />} label="Relatórios" />
               <SidebarLink to="/admin/settings" icon={<Settings size={20} />} label="Configurações" />
             </div>
