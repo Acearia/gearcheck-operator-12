@@ -1,16 +1,52 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Wrench } from "lucide-react";
-import { equipments } from "@/lib/data";
+import { equipments as initialEquipments, Equipment } from "@/lib/data";
+import { AddEquipmentDialog } from "@/components/equipment/AddEquipmentDialog";
+import { useToast } from "@/hooks/use-toast";
 
 const AdminEquipment = () => {
+  const [equipments, setEquipments] = useState<Equipment[]>(initialEquipments);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const { toast } = useToast();
+  
+  // Calculate the next available ID (just for demonstration)
+  const getNextId = () => {
+    const maxId = Math.max(...equipments.map(eq => parseInt(eq.id)));
+    return (maxId + 1).toString();
+  };
+
+  const handleAddEquipment = (data: { name: string; kp: string; sector: string; capacity: string; type: string }) => {
+    const newEquipment: Equipment = {
+      id: getNextId(),
+      name: data.name,
+      kp: data.kp,
+      sector: data.sector,
+      capacity: data.capacity,
+      type: data.type,
+    };
+    
+    setEquipments([newEquipment, ...equipments]);
+  };
+
+  const handleRemoveEquipment = (id: string) => {
+    setEquipments(equipments.filter(eq => eq.id !== id));
+    toast({
+      title: "Equipamento removido",
+      description: "O equipamento foi removido com sucesso.",
+    });
+  };
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Gerenciar Equipamentos</h1>
-        <Button className="bg-red-700 hover:bg-red-800">
+        <Button 
+          className="bg-red-700 hover:bg-red-800"
+          onClick={() => setDialogOpen(true)}
+        >
           <PlusCircle size={16} className="mr-2" />
           Novo Equipamento
         </Button>
@@ -49,7 +85,12 @@ const AdminEquipment = () => {
                       <Button variant="outline" size="sm" className="mr-2">
                         Editar
                       </Button>
-                      <Button variant="outline" size="sm" className="text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600"
+                        onClick={() => handleRemoveEquipment(equipment.id)}
+                      >
                         Remover
                       </Button>
                     </td>
@@ -60,6 +101,12 @@ const AdminEquipment = () => {
           </div>
         </CardContent>
       </Card>
+
+      <AddEquipmentDialog 
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        onAddEquipment={handleAddEquipment}
+      />
     </div>
   );
 };

@@ -1,16 +1,50 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
-import { operators } from "@/lib/data";
+import { operators as initialOperators, Operator } from "@/lib/data";
+import { AddOperatorDialog } from "@/components/operators/AddOperatorDialog";
+import { useToast } from "@/hooks/use-toast";
 
 const AdminOperators = () => {
+  const [operators, setOperators] = useState<Operator[]>(initialOperators);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const { toast } = useToast();
+  
+  // Calculate the next available ID (just for demonstration)
+  const getNextId = () => {
+    const maxId = Math.max(...operators.map(op => parseInt(op.id)));
+    return (maxId + 1).toString();
+  };
+
+  const handleAddOperator = (data: { name: string; cargo?: string; setor?: string }) => {
+    const newOperator: Operator = {
+      id: getNextId(),
+      name: data.name.toUpperCase(),
+      cargo: data.cargo || undefined,
+      setor: data.setor || undefined,
+    };
+    
+    setOperators([newOperator, ...operators]);
+  };
+
+  const handleRemoveOperator = (id: string) => {
+    setOperators(operators.filter(op => op.id !== id));
+    toast({
+      title: "Operador removido",
+      description: "O operador foi removido com sucesso.",
+    });
+  };
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Gerenciar Operadores</h1>
-        <Button className="bg-red-700 hover:bg-red-800">
+        <Button 
+          className="bg-red-700 hover:bg-red-800"
+          onClick={() => setDialogOpen(true)}
+        >
           <PlusCircle size={16} className="mr-2" />
           Novo Operador
         </Button>
@@ -43,7 +77,12 @@ const AdminOperators = () => {
                       <Button variant="outline" size="sm" className="mr-2">
                         Editar
                       </Button>
-                      <Button variant="outline" size="sm" className="text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600"
+                        onClick={() => handleRemoveOperator(operator.id)}
+                      >
                         Remover
                       </Button>
                     </td>
@@ -57,6 +96,12 @@ const AdminOperators = () => {
           </div>
         </CardContent>
       </Card>
+
+      <AddOperatorDialog 
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        onAddOperator={handleAddOperator}
+      />
     </div>
   );
 };
