@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
@@ -8,11 +8,26 @@ import { AddOperatorDialog } from "@/components/operators/AddOperatorDialog";
 import { useToast } from "@/hooks/use-toast";
 
 const AdminOperators = () => {
-  const [operators, setOperators] = useState<Operator[]>(initialOperators);
+  const [operators, setOperators] = useState<Operator[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const { toast } = useToast();
   
-  // Calculate the next available ID (just for demonstration)
+  // Load operators from localStorage on component mount
+  useEffect(() => {
+    const storedOperators = localStorage.getItem('gearcheck-operators');
+    if (storedOperators) {
+      try {
+        setOperators(JSON.parse(storedOperators));
+      } catch (e) {
+        console.error('Error parsing operators from localStorage:', e);
+        setOperators(initialOperators);
+      }
+    } else {
+      setOperators(initialOperators);
+    }
+  }, []);
+  
+  // Calculate the next available ID
   const getNextId = () => {
     const maxId = Math.max(...operators.map(op => parseInt(op.id)));
     return (maxId + 1).toString();
@@ -26,11 +41,20 @@ const AdminOperators = () => {
       setor: data.setor || undefined,
     };
     
-    setOperators([newOperator, ...operators]);
+    const updatedOperators = [newOperator, ...operators];
+    setOperators(updatedOperators);
+    
+    // Save to localStorage for persistence between pages
+    localStorage.setItem('gearcheck-operators', JSON.stringify(updatedOperators));
   };
 
   const handleRemoveOperator = (id: string) => {
-    setOperators(operators.filter(op => op.id !== id));
+    const updatedOperators = operators.filter(op => op.id !== id);
+    setOperators(updatedOperators);
+    
+    // Update localStorage
+    localStorage.setItem('gearcheck-operators', JSON.stringify(updatedOperators));
+    
     toast({
       title: "Operador removido",
       description: "O operador foi removido com sucesso.",

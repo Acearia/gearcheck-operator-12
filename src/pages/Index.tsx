@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Check, X, ChevronDown, Settings } from "lucide-react";
 import { 
@@ -10,12 +9,15 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import SignatureCanvas from "@/components/SignatureCanvas";
-import { operators, equipments, checklistItems, ChecklistItem, Operator, Equipment } from "@/lib/data";
+import { operators as initialOperators, equipments as initialEquipments, checklistItems, ChecklistItem, Operator, Equipment } from "@/lib/data";
+import { AddOperatorDialog } from "@/components/operators/AddOperatorDialog";
 
 const Index = () => {
   const { toast } = useToast();
+  const [operators, setOperators] = useState<Operator[]>([]);
+  const [equipments, setEquipments] = useState<Equipment[]>([]);
   const [selectedOperator, setSelectedOperator] = useState<Operator | null>(null);
   const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
   const [checklist, setChecklist] = useState<ChecklistItem[]>(checklistItems);
@@ -23,6 +25,34 @@ const Index = () => {
   const [inspectionDate, setInspectionDate] = useState<string>(
     new Date().toISOString().split('T')[0]
   );
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  useEffect(() => {
+    const storedOperators = localStorage.getItem('gearcheck-operators');
+    const storedEquipments = localStorage.getItem('gearcheck-equipments');
+    
+    if (storedOperators) {
+      try {
+        setOperators(JSON.parse(storedOperators));
+      } catch (e) {
+        console.error('Error parsing operators from localStorage:', e);
+        setOperators(initialOperators);
+      }
+    } else {
+      setOperators(initialOperators);
+    }
+    
+    if (storedEquipments) {
+      try {
+        setEquipments(JSON.parse(storedEquipments));
+      } catch (e) {
+        console.error('Error parsing equipments from localStorage:', e);
+        setEquipments(initialEquipments);
+      }
+    } else {
+      setEquipments(initialEquipments);
+    }
+  }, []);
 
   const handleOperatorSelect = (operatorId: string) => {
     const operator = operators.find(op => op.id === operatorId) || null;
@@ -42,10 +72,31 @@ const Index = () => {
     );
   };
 
+  const handleAddOperator = (data: { name: string; cargo?: string; setor?: string }) => {
+    const maxId = Math.max(...operators.map(op => parseInt(op.id)));
+    const nextId = (maxId + 1).toString();
+    
+    const newOperator: Operator = {
+      id: nextId,
+      name: data.name.toUpperCase(),
+      cargo: data.cargo || undefined,
+      setor: data.setor || undefined,
+    };
+    
+    const updatedOperators = [newOperator, ...operators];
+    setOperators(updatedOperators);
+    
+    localStorage.setItem('gearcheck-operators', JSON.stringify(updatedOperators));
+    
+    toast({
+      title: "Operador adicionado",
+      description: `O operador ${data.name} foi adicionado com sucesso.`,
+    });
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Verifica se um operador foi selecionado
     if (!selectedOperator) {
       toast({
         title: "Erro",
@@ -55,7 +106,6 @@ const Index = () => {
       return;
     }
 
-    // Verifica se um equipamento foi selecionado
     if (!selectedEquipment) {
       toast({
         title: "Erro",
@@ -65,7 +115,6 @@ const Index = () => {
       return;
     }
 
-    // Verifica se todos os itens do checklist foram respondidos
     const unansweredItems = checklist.filter(item => item.answer === null || item.answer === "Selecione");
     if (unansweredItems.length > 0) {
       toast({
@@ -76,7 +125,6 @@ const Index = () => {
       return;
     }
 
-    // Verifica se a assinatura foi realizada
     if (!signature) {
       toast({
         title: "Assinatura não encontrada",
@@ -86,7 +134,6 @@ const Index = () => {
       return;
     }
 
-    // Cria o objeto com os dados do formulário
     const formData = {
       operator: selectedOperator,
       equipment: selectedEquipment,
@@ -96,7 +143,6 @@ const Index = () => {
       submissionDate: new Date().toISOString(),
     };
 
-    // Aqui você poderia enviar os dados para um servidor ou banco de dados
     console.log("Formulário enviado:", formData);
     
     toast({
@@ -105,13 +151,11 @@ const Index = () => {
       variant: "default",
     });
 
-    // Reseta o formulário para uma nova inspeção
     setSelectedEquipment(null);
     setChecklist(checklistItems.map(item => ({ ...item, answer: null })));
     setSignature(null);
   };
 
-  // Função para obter o tipo de equipamento em texto
   const getEquipmentTypeText = (type: string) => {
     switch (type) {
       case "1": return "Ponte";
@@ -123,21 +167,27 @@ const Index = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
-      {/* Header */}
       <header className="bg-red-700 text-white px-4 py-3 shadow-md flex justify-between items-center">
         <button className="text-white">
           <X size={24} />
         </button>
         <h1 className="font-bold text-lg">Check List Online</h1>
-        <Link to="/admin/login" className="text-white">
-          <Settings size={24} />
-        </Link>
+        <div className="flex items-center space-x-2">
+          <button 
+            onClick={() => setDialogOpen(true)} 
+            className="text-white bg-red-800 p-1 rounded-full"
+            aria-label="Adicionar Operador"
+          >
+            <div className="h-6 w-6 flex items-center justify-center">+</div>
+          </button>
+          <Link to="/admin/login" className="text-white">
+            <Settings size={24} />
+          </Link>
+        </div>
       </header>
 
-      {/* Main Content */}
       <div className="flex-1 overflow-auto p-4 max-w-3xl mx-auto w-full">
         <form onSubmit={handleSubmit}>
-          {/* Operator Selection */}
           <div className="mb-6">
             <div className="flex gap-2 items-center">
               <div className="w-20 h-10 border border-gray-300 rounded overflow-hidden">
@@ -178,7 +228,6 @@ const Index = () => {
             )}
           </div>
 
-          {/* Equipment Selection */}
           <div className="mb-4 grid grid-cols-3 gap-4 items-center">
             <div className="flex items-center">
               <span className="text-red-500 mr-1">*</span>
@@ -252,7 +301,6 @@ const Index = () => {
             )}
           </div>
 
-          {/* Checklist Items */}
           <div className="mt-6 space-y-4">
             {checklist.map(item => (
               <div key={item.id} className="p-3 bg-white rounded-md shadow-sm border border-gray-200">
@@ -282,12 +330,10 @@ const Index = () => {
             ))}
           </div>
 
-          {/* Signature Canvas */}
           <div className="mt-6 bg-white p-4 rounded-md shadow-sm border border-gray-200">
             <SignatureCanvas onSignatureChange={setSignature} />
           </div>
 
-          {/* Submit Button */}
           <div className="mt-6 mb-10 flex justify-center">
             <Button 
               type="submit"
@@ -298,6 +344,12 @@ const Index = () => {
           </div>
         </form>
       </div>
+
+      <AddOperatorDialog 
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        onAddOperator={handleAddOperator}
+      />
     </div>
   );
 };

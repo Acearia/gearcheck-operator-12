@@ -1,18 +1,33 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Wrench } from "lucide-react";
+import { PlusCircle } from "lucide-react";
 import { equipments as initialEquipments, Equipment } from "@/lib/data";
 import { AddEquipmentDialog } from "@/components/equipment/AddEquipmentDialog";
 import { useToast } from "@/hooks/use-toast";
 
 const AdminEquipment = () => {
-  const [equipments, setEquipments] = useState<Equipment[]>(initialEquipments);
+  const [equipments, setEquipments] = useState<Equipment[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const { toast } = useToast();
   
-  // Calculate the next available ID (just for demonstration)
+  // Load equipments from localStorage on component mount
+  useEffect(() => {
+    const storedEquipments = localStorage.getItem('gearcheck-equipments');
+    if (storedEquipments) {
+      try {
+        setEquipments(JSON.parse(storedEquipments));
+      } catch (e) {
+        console.error('Error parsing equipments from localStorage:', e);
+        setEquipments(initialEquipments);
+      }
+    } else {
+      setEquipments(initialEquipments);
+    }
+  }, []);
+  
+  // Calculate the next available ID
   const getNextId = () => {
     const maxId = Math.max(...equipments.map(eq => parseInt(eq.id)));
     return (maxId + 1).toString();
@@ -28,11 +43,20 @@ const AdminEquipment = () => {
       type: data.type,
     };
     
-    setEquipments([newEquipment, ...equipments]);
+    const updatedEquipments = [newEquipment, ...equipments];
+    setEquipments(updatedEquipments);
+    
+    // Save to localStorage for persistence between pages
+    localStorage.setItem('gearcheck-equipments', JSON.stringify(updatedEquipments));
   };
 
   const handleRemoveEquipment = (id: string) => {
-    setEquipments(equipments.filter(eq => eq.id !== id));
+    const updatedEquipments = equipments.filter(eq => eq.id !== id);
+    setEquipments(updatedEquipments);
+    
+    // Update localStorage
+    localStorage.setItem('gearcheck-equipments', JSON.stringify(updatedEquipments));
+    
     toast({
       title: "Equipamento removido",
       description: "O equipamento foi removido com sucesso.",

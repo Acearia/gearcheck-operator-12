@@ -3,7 +3,7 @@ import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -34,6 +34,9 @@ export function AddOperatorDialog({ open, onOpenChange, onAddOperator }: AddOper
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
+    // Ensure name exists before submitting (fixes TypeScript error)
+    if (!values.name) return;
+    
     onAddOperator(values);
     form.reset();
     toast({
@@ -48,6 +51,9 @@ export function AddOperatorDialog({ open, onOpenChange, onAddOperator }: AddOper
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Adicionar Novo Operador</DialogTitle>
+          <DialogDescription>
+            Preencha os dados do operador para adicioná-lo ao sistema.
+          </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
