@@ -1,50 +1,75 @@
 
 import React from "react";
-import { useForm } from "react-hook-form";
+import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Nome deve ter pelo menos 2 caracteres" }),
+  type: z.string().min(1, { message: "Selecione um tipo" }),
   kp: z.string().min(1, { message: "KP é obrigatório" }),
   sector: z.string().min(1, { message: "Setor é obrigatório" }),
   capacity: z.string().min(1, { message: "Capacidade é obrigatória" }),
-  type: z.string().min(1, { message: "Tipo é obrigatório" }),
 });
 
-interface AddEquipmentDialogProps {
+export function AddEquipmentDialog({
+  open,
+  onOpenChange,
+  onAddEquipment,
+}: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onAddEquipment: (equipment: { name: string; kp: string; sector: string; capacity: string; type: string }) => void;
-}
-
-export function AddEquipmentDialog({ open, onOpenChange, onAddEquipment }: AddEquipmentDialogProps) {
-  const { toast } = useToast();
-  
+  onAddEquipment: (data: {
+    name: string;
+    type: string;
+    kp: string;
+    sector: string;
+    capacity: string;
+  }) => void;
+}) {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
+      type: "",
       kp: "",
       sector: "",
       capacity: "",
-      type: "",
     },
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
+    // Make sure all required fields are present
+    if (!values.name || !values.type || !values.kp || !values.sector || !values.capacity) return;
+    
     onAddEquipment(values);
     form.reset();
-    toast({
-      title: "Equipamento adicionado",
-      description: `O equipamento ${values.name} foi adicionado com sucesso.`,
-    });
     onOpenChange(false);
   }
 
@@ -52,7 +77,10 @@ export function AddEquipmentDialog({ open, onOpenChange, onAddEquipment }: AddEq
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Adicionar Novo Equipamento</DialogTitle>
+          <DialogTitle>Adicionar Equipamento</DialogTitle>
+          <DialogDescription>
+            Preencha os dados para adicionar um novo equipamento ao sistema.
+          </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -61,48 +89,9 @@ export function AddEquipmentDialog({ open, onOpenChange, onAddEquipment }: AddEq
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nome</FormLabel>
+                  <FormLabel>Nome*</FormLabel>
                   <FormControl>
                     <Input placeholder="Nome do equipamento" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="kp"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>KP</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Código KP" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="sector"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Setor</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Setor" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="capacity"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Capacidade</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Ex: 10 tons" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -113,11 +102,14 @@ export function AddEquipmentDialog({ open, onOpenChange, onAddEquipment }: AddEq
               name="type"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Tipo</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormLabel>Tipo*</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Selecione o tipo" />
+                        <SelectValue placeholder="Selecione o tipo de equipamento" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -131,8 +123,47 @@ export function AddEquipmentDialog({ open, onOpenChange, onAddEquipment }: AddEq
                 </FormItem>
               )}
             />
+            <FormField
+              control={form.control}
+              name="kp"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>KP*</FormLabel>
+                  <FormControl>
+                    <Input placeholder="KP do equipamento" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="sector"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Setor*</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Setor do equipamento" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="capacity"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Capacidade*</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Ex: 5 toneladas" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <DialogFooter>
-              <Button type="submit" className="bg-red-700 hover:bg-red-800">Adicionar</Button>
+              <Button type="submit">Adicionar Equipamento</Button>
             </DialogFooter>
           </form>
         </Form>

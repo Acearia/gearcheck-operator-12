@@ -1,13 +1,27 @@
 
 import React from "react";
-import { useForm } from "react-hook-form";
+import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { useToast } from "@/hooks/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Nome deve ter pelo menos 2 caracteres" }),
@@ -15,15 +29,15 @@ const formSchema = z.object({
   setor: z.string().optional(),
 });
 
-interface AddOperatorDialogProps {
+export function AddOperatorDialog({ 
+  open, 
+  onOpenChange, 
+  onAddOperator
+}: { 
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onAddOperator: (operator: { name: string; cargo?: string; setor?: string }) => void;
-}
-
-export function AddOperatorDialog({ open, onOpenChange, onAddOperator }: AddOperatorDialogProps) {
-  const { toast } = useToast();
-  
+  onAddOperator: (data: { name: string; cargo?: string; setor?: string }) => void;
+}) {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -34,15 +48,11 @@ export function AddOperatorDialog({ open, onOpenChange, onAddOperator }: AddOper
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    // Ensure name exists before submitting (fixes TypeScript error)
+    // Make sure name is required
     if (!values.name) return;
     
     onAddOperator(values);
     form.reset();
-    toast({
-      title: "Operador adicionado",
-      description: `O operador ${values.name} foi adicionado com sucesso.`,
-    });
     onOpenChange(false);
   }
 
@@ -50,9 +60,9 @@ export function AddOperatorDialog({ open, onOpenChange, onAddOperator }: AddOper
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Adicionar Novo Operador</DialogTitle>
+          <DialogTitle>Adicionar Operador</DialogTitle>
           <DialogDescription>
-            Preencha os dados do operador para adicioná-lo ao sistema.
+            Preencha os dados para adicionar um novo operador ao sistema.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -62,7 +72,7 @@ export function AddOperatorDialog({ open, onOpenChange, onAddOperator }: AddOper
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nome</FormLabel>
+                  <FormLabel>Nome*</FormLabel>
                   <FormControl>
                     <Input placeholder="Nome do operador" {...field} />
                   </FormControl>
@@ -97,7 +107,7 @@ export function AddOperatorDialog({ open, onOpenChange, onAddOperator }: AddOper
               )}
             />
             <DialogFooter>
-              <Button type="submit" className="bg-red-700 hover:bg-red-800">Adicionar</Button>
+              <Button type="submit">Adicionar Operador</Button>
             </DialogFooter>
           </form>
         </Form>

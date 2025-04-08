@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
-import { Lock, LogIn } from "lucide-react";
+import { Lock, LogIn, ArrowLeft } from "lucide-react";
 
 const AdminLogin = () => {
   const { toast } = useToast();
@@ -43,6 +43,14 @@ const AdminLogin = () => {
     }
     
     setIsLoading(false);
+  };
+
+  const handleBackToChecklist = () => {
+    navigate("/");
+    toast({
+      title: "Retornando ao Checklist",
+      description: "Você foi redirecionado para a página de checklist",
+    });
   };
 
   return (
@@ -82,7 +90,7 @@ const AdminLogin = () => {
               />
             </div>
           </CardContent>
-          <CardFooter>
+          <CardFooter className="flex flex-col space-y-2">
             <Button 
               type="submit" 
               className="w-full bg-red-700 hover:bg-red-800"
@@ -99,6 +107,15 @@ const AdminLogin = () => {
                   Entrar
                 </span>
               )}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full border-red-700 text-red-700 hover:bg-red-50"
+              onClick={handleBackToChecklist}
+            >
+              <ArrowLeft size={16} className="mr-1" />
+              Voltar ao Checklist
             </Button>
           </CardFooter>
         </form>
