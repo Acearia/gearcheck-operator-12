@@ -1,12 +1,11 @@
+
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
   ClipboardList, 
   AlertTriangle, 
-  CheckCircle2, 
   Wrench, 
-  User, 
-  CalendarClock 
+  User
 } from "lucide-react";
 import { 
   ResponsiveContainer, 
@@ -152,19 +151,16 @@ const AdminDashboard = () => {
                   <tr key={inspection.id} className="border-b border-gray-200 hover:bg-gray-50">
                     <td className="py-3 px-4">{inspection.equipment}</td>
                     <td className="py-3 px-4">{inspection.operator}</td>
-                    <td className="py-3 px-4 flex items-center">
-                      <CalendarClock size={16} className="mr-1 text-gray-500" />
+                    <td className="py-3 px-4">
                       {new Date(inspection.date).toLocaleDateString('pt-BR')}
                     </td>
                     <td className="py-3 px-4">
                       {inspection.status === "ok" ? (
                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          <CheckCircle2 size={14} className="mr-1" />
                           OK
                         </span>
                       ) : (
                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                          <AlertTriangle size={14} className="mr-1" />
                           Problema
                         </span>
                       )}

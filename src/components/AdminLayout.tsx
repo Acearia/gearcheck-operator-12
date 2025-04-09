@@ -15,7 +15,7 @@ import {
   X,
   ArrowLeft
 } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 const AdminLayout = () => {
@@ -122,17 +122,6 @@ const AdminLayout = () => {
               <SidebarLink to="/admin/equipment" icon={<Wrench size={20} />} label="Equipamentos" />
               <SidebarLink to="/admin/reports" icon={<BarChart3 size={20} />} label="Relatórios" />
               <SidebarLink to="/admin/settings" icon={<Settings size={20} />} label="Configurações" />
-            </div>
-            <div className="pt-6 mt-6 border-t border-gray-200">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleBackToChecklist}
-                className="w-full flex items-center justify-start p-2 text-gray-600 rounded-md hover:bg-gray-100"
-              >
-                <Home size={20} className="mr-3" />
-                <span>Voltar ao Checklist</span>
-              </Button>
             </div>
           </nav>
         </aside>

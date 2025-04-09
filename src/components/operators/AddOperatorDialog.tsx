@@ -48,10 +48,16 @@ export function AddOperatorDialog({
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    // Make sure name is required
-    if (!values.name) return;
+    // Ensure name is required and not empty
+    if (!values.name.trim()) return;
     
-    onAddOperator(values);
+    // Now we're sure name is a non-empty string as required by the type
+    onAddOperator({
+      name: values.name,
+      cargo: values.cargo,
+      setor: values.setor
+    });
+    
     form.reset();
     onOpenChange(false);
   }
