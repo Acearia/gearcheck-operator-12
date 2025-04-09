@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,9 +7,11 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Save, KeyRound, Bell, Database, Shield, Server } from "lucide-react";
+import { Save, KeyRound, Bell, Database, Shield, Server, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Link } from "react-router-dom";
 
 const AdminSettings = () => {
   const { toast } = useToast();
@@ -18,6 +21,8 @@ const AdminSettings = () => {
   const [notifyNewInspections, setNotifyNewInspections] = useState(true);
   const [notifyIssues, setNotifyIssues] = useState(true);
   const [proxmoxOpen, setProxmoxOpen] = useState(false);
+  const [testDbConnection, setTestDbConnection] = useState(false);
+  const [dbConnectionResult, setDbConnectionResult] = useState("");
 
   const handleSavePassword = (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,10 +63,19 @@ const AdminSettings = () => {
   };
 
   const handleSaveDatabase = () => {
-    toast({
-      title: "Banco de Dados",
-      description: "Configurações do banco de dados atualizadas",
-    });
+    setTestDbConnection(true);
+    
+    // Simular teste de conexão
+    setTimeout(() => {
+      setTestDbConnection(false);
+      setDbConnectionResult("error");
+      
+      toast({
+        title: "Erro de Conexão",
+        description: "Não foi possível conectar ao banco de dados com as configurações fornecidas. Verifique os parâmetros e tente novamente.",
+        variant: "destructive",
+      });
+    }, 2000);
   };
 
   return (
@@ -192,6 +206,33 @@ const AdminSettings = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {dbConnectionResult === "error" && (
+                <Alert variant="destructive" className="mb-4">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Erro de Conexão</AlertTitle>
+                  <AlertDescription>
+                    Não foi possível conectar ao banco de dados. Verifique se o serviço PostgreSQL está rodando e se as credenciais estão corretas.
+                  </AlertDescription>
+                </Alert>
+              )}
+              
+              <div className="bg-blue-50 p-4 rounded-md border border-blue-100 mb-4">
+                <h3 className="text-blue-800 font-medium flex items-center">
+                  <AlertCircle className="h-4 w-4 mr-2" />
+                  Configuração de Banco de Dados
+                </h3>
+                <p className="text-sm text-blue-700 mt-2">
+                  Para uma configuração mais detalhada do banco de dados com opções avançadas, 
+                  recomendamos utilizar a ferramenta completa de conexão ao banco de dados.
+                </p>
+                <Link to="/admin/database">
+                  <Button variant="outline" className="mt-2 bg-white border-blue-200 text-blue-700 hover:bg-blue-100">
+                    <Database className="mr-2 h-4 w-4" />
+                    Abrir Ferramenta de Conexão ao Banco de Dados
+                  </Button>
+                </Link>
+              </div>
+              
               <div className="space-y-2">
                 <Label htmlFor="db-host">Host</Label>
                 <Input id="db-host" placeholder="localhost" />
@@ -285,6 +326,16 @@ const AdminSettings = () => {
                           \q
                         </div>
                       </div>
+                      
+                      <div className="space-y-2">
+                        <h3 className="text-sm font-medium">6. Teste a Conexão Remota</h3>
+                        <p className="text-sm text-muted-foreground">
+                          De outro computador, teste a conexão usando o comando psql ou uma ferramenta gráfica como pgAdmin:
+                        </p>
+                        <div className="bg-gray-100 p-2 rounded text-sm font-mono">
+                          psql -h IP_DO_CONTAINER -U gearcheck -d gearcheck_db
+                        </div>
+                      </div>
                     </div>
                     <div className="mt-4">
                       <Button className="w-full" onClick={() => {
@@ -301,9 +352,13 @@ const AdminSettings = () => {
               </div>
             </CardContent>
             <CardFooter>
-              <Button onClick={handleSaveDatabase} className="bg-red-700 hover:bg-red-800">
+              <Button 
+                onClick={handleSaveDatabase} 
+                className="bg-red-700 hover:bg-red-800"
+                disabled={testDbConnection}
+              >
                 <Save className="mr-2 h-4 w-4" />
-                Salvar Configurações
+                {testDbConnection ? "Testando conexão..." : "Salvar Configurações"}
               </Button>
             </CardFooter>
           </Card>

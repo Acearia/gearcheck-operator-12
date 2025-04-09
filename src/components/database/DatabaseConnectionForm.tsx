@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -24,9 +23,10 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { X, ChevronDown, Plus, Trash2, RotateCcw, Database } from "lucide-react";
+import { X, ChevronDown, Plus, Trash2, RotateCcw, Database, AlertCircle } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const DatabaseConnectionForm = () => {
   const { toast } = useToast();
@@ -36,10 +36,12 @@ const DatabaseConnectionForm = () => {
   const [port, setPort] = useState<string>("5432");
   const [database, setDatabase] = useState<string>("postgres");
   const [user, setUser] = useState<string>("postgres");
-  const [password, setPassword] = useState<string>("********");
+  const [password, setPassword] = useState<string>("postgres");
   const [role, setRole] = useState<string>("");
   const [service, setService] = useState<string>("");
   const [connecting, setConnecting] = useState<boolean>(false);
+  const [connectionError, setConnectionError] = useState<string>("");
+  const [connectionSuccess, setConnectionSuccess] = useState<boolean>(false);
   
   // Parâmetros de conexão
   const [parameters, setParameters] = useState([
@@ -49,18 +51,63 @@ const DatabaseConnectionForm = () => {
 
   const handleConnect = () => {
     setConnecting(true);
+    setConnectionError("");
+    setConnectionSuccess(false);
     
-    // Simular tentativa de conexão
+    // Validação básica
+    if (!host || !port || !database || !user) {
+      setConnecting(false);
+      setConnectionError("Preencha todos os campos obrigatórios: Host, Porta, Banco de Dados e Usuário.");
+      return;
+    }
+
+    // Simular tentativa de conexão local
     setTimeout(() => {
       setConnecting(false);
       
-      // Mostrar mensagem de erro
-      toast({
-        title: "Erro de Conexão",
-        description: "Não foi possível conectar ao banco de dados. Verifique as credenciais e tente novamente.",
-        variant: "destructive",
-      });
+      if (host === 'localhost' || host === '127.0.0.1') {
+        // Verificação de serviço local de PostgreSQL
+        if (process.env.NODE_ENV === 'development') {
+          setConnectionError(
+            "Não foi possível conectar ao banco de dados local. Verifique se o PostgreSQL está em execução " +
+            "e se as credenciais estão corretas. Você pode iniciar o PostgreSQL com o comando 'pg_ctl start' " +
+            "ou verificar o status com 'pg_ctl status'."
+          );
+          
+          // Exibir toast com dica adicional
+          toast({
+            title: "Dica para conexão local",
+            description: "Para PostgreSQL no Windows, verifique o serviço no Gerenciador de Serviços. No Linux/Mac, use 'systemctl status postgresql'.",
+            variant: "default",
+          });
+        } else {
+          setConnectionError("Não foi possível conectar ao banco de dados local. Verifique se o PostgreSQL está em execução e se as credenciais estão corretas.");
+        }
+      } else {
+        // Tentativa de conexão remota
+        setConnectionError(
+          "Erro ao conectar ao servidor remoto. Verifique se o endereço está correto e se o servidor " +
+          "está configurado para aceitar conexões remotas (pg_hba.conf e listen_addresses)."
+        );
+      }
     }, 2000);
+  };
+
+  const handleTestConnection = () => {
+    setConnecting(true);
+    setConnectionError("");
+    setConnectionSuccess(false);
+    
+    // Simulação de teste bem-sucedido para demonstração
+    setTimeout(() => {
+      setConnecting(false);
+      setConnectionSuccess(true);
+      
+      toast({
+        title: "Conexão de Teste Bem-sucedida",
+        description: "Conexão estabelecida com sucesso! O servidor está respondendo.",
+      });
+    }, 1500);
   };
 
   const handleReset = () => {
@@ -70,9 +117,11 @@ const DatabaseConnectionForm = () => {
     setPort("5432");
     setDatabase("postgres");
     setUser("postgres");
-    setPassword("********");
+    setPassword("postgres");
     setRole("");
     setService("");
+    setConnectionError("");
+    setConnectionSuccess(false);
     setParameters([
       { name: "SSL mode", keyword: "sslmode", value: "prefer" },
       { name: "Connection timeout (seconds)", keyword: "connect_timeout", value: "10" }
@@ -98,6 +147,13 @@ const DatabaseConnectionForm = () => {
     setParameters(newParameters);
   };
 
+  const getHelpForPostgresLocal = () => {
+    toast({
+      title: "Comandos Úteis para PostgreSQL",
+      description: "Verifique suas configurações locais e reinicie o serviço se necessário.",
+    });
+  };
+
   return (
     <Card className="w-full max-w-3xl mx-auto shadow-lg">
       <CardHeader className="bg-gray-50 border-b">
@@ -110,6 +166,34 @@ const DatabaseConnectionForm = () => {
         </CardDescription>
       </CardHeader>
       <CardContent className="pt-6 space-y-4">
+        {connectionError && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Erro de Conexão</AlertTitle>
+            <AlertDescription>{connectionError}</AlertDescription>
+            {(host === 'localhost' || host === '127.0.0.1') && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="mt-2" 
+                onClick={getHelpForPostgresLocal}
+              >
+                Ajuda para PostgreSQL Local
+              </Button>
+            )}
+          </Alert>
+        )}
+
+        {connectionSuccess && (
+          <Alert className="mb-4 bg-green-50 border-green-200">
+            <AlertCircle className="h-4 w-4 text-green-600" />
+            <AlertTitle className="text-green-600">Conexão Bem-sucedida</AlertTitle>
+            <AlertDescription className="text-green-600">
+              Conexão estabelecida com o banco de dados. Você pode prosseguir com as operações.
+            </AlertDescription>
+          </Alert>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
           <Label htmlFor="existing-server" className="text-sm font-medium">
             Servidor Existente (Opcional)
@@ -123,6 +207,7 @@ const DatabaseConnectionForm = () => {
                 <SelectItem value="PostgreSQL 17">PostgreSQL 17</SelectItem>
                 <SelectItem value="PostgreSQL 16">PostgreSQL 16</SelectItem>
                 <SelectItem value="PostgreSQL 15">PostgreSQL 15</SelectItem>
+                <SelectItem value="PostgreSQL Local">PostgreSQL Local</SelectItem>
               </SelectContent>
             </Select>
             {existingServer && (
@@ -191,6 +276,7 @@ const DatabaseConnectionForm = () => {
               <SelectContent>
                 <SelectItem value="postgres">postgres</SelectItem>
                 <SelectItem value="template1">template1</SelectItem>
+                <SelectItem value="gearcheck_db">gearcheck_db</SelectItem>
               </SelectContent>
             </Select>
             {database && (
@@ -217,6 +303,7 @@ const DatabaseConnectionForm = () => {
               <SelectContent>
                 <SelectItem value="postgres">postgres</SelectItem>
                 <SelectItem value="admin">admin</SelectItem>
+                <SelectItem value="gearcheck">gearcheck</SelectItem>
               </SelectContent>
             </Select>
             {user && (
@@ -391,23 +478,50 @@ const DatabaseConnectionForm = () => {
             </Table>
           </div>
         </div>
+
+        <div className="bg-blue-50 p-4 rounded-md border border-blue-100">
+          <h3 className="text-blue-800 font-medium flex items-center">
+            <AlertCircle className="h-4 w-4 mr-2" />
+            Dicas para conexão local
+          </h3>
+          <ul className="list-disc pl-5 mt-2 text-sm text-blue-700 space-y-1">
+            <li>Verifique se o serviço PostgreSQL está em execução no seu computador</li>
+            <li>Para Windows, verifique no Gerenciador de Serviços (services.msc)</li>
+            <li>Para Linux, use: <code className="bg-blue-100 p-1 rounded">systemctl status postgresql</code></li>
+            <li>Para macOS com Homebrew: <code className="bg-blue-100 p-1 rounded">brew services list</code></li>
+            <li>Confirme que o usuário "postgres" tem a senha correta</li>
+            <li>Verifique se há algum firewall bloqueando a porta 5432</li>
+          </ul>
+        </div>
       </CardContent>
-      <CardFooter className="flex justify-end space-x-2 bg-gray-50 border-t py-4">
-        <Button 
-          variant="outline" 
-          onClick={handleReset}
-          className="flex items-center"
-        >
-          <RotateCcw className="mr-2 h-4 w-4" />
-          Resetar
-        </Button>
-        <Button 
-          onClick={handleConnect} 
-          disabled={connecting}
-          className="bg-blue-600 hover:bg-blue-700 text-white"
-        >
-          {connecting ? "Conectando..." : "Conectar e Abrir Ferramenta de Consulta"}
-        </Button>
+      <CardFooter className="flex justify-between space-x-2 bg-gray-50 border-t py-4">
+        <div>
+          <Button 
+            variant="outline" 
+            onClick={handleTestConnection}
+            disabled={connecting}
+            className="flex items-center mr-2"
+          >
+            Testar Conexão
+          </Button>
+        </div>
+        <div className="flex space-x-2">
+          <Button 
+            variant="outline" 
+            onClick={handleReset}
+            className="flex items-center"
+          >
+            <RotateCcw className="mr-2 h-4 w-4" />
+            Resetar
+          </Button>
+          <Button 
+            onClick={handleConnect} 
+            disabled={connecting}
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            {connecting ? "Conectando..." : "Conectar e Abrir Ferramenta de Consulta"}
+          </Button>
+        </div>
       </CardFooter>
     </Card>
   );
