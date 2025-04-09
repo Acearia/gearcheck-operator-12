@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,7 +7,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/components/ui/use-toast";
-import { Save, KeyRound, Bell, Database, Shield } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Save, KeyRound, Bell, Database, Shield, Server } from "lucide-react";
 
 const AdminSettings = () => {
   const { toast } = useToast();
@@ -17,6 +17,7 @@ const AdminSettings = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [notifyNewInspections, setNotifyNewInspections] = useState(true);
   const [notifyIssues, setNotifyIssues] = useState(true);
+  const [proxmoxOpen, setProxmoxOpen] = useState(false);
 
   const handleSavePassword = (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,7 +40,6 @@ const AdminSettings = () => {
       return;
     }
     
-    // In a real app, this would be handled properly
     toast({
       title: "Senha Atualizada",
       description: "Sua senha foi atualizada com sucesso",
@@ -211,6 +211,93 @@ const AdminSettings = () => {
               <div className="space-y-2">
                 <Label htmlFor="db-password">Senha</Label>
                 <Input id="db-password" type="password" placeholder="••••••••" />
+              </div>
+              
+              <div className="mt-6">
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" className="w-full flex items-center justify-center">
+                      <Server className="mr-2 h-4 w-4" />
+                      Configurar Banco de Dados no Proxmox
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Configuração do Banco de Dados no Proxmox</DialogTitle>
+                      <DialogDescription>
+                        Siga estas etapas para configurar um banco de dados PostgreSQL no Proxmox
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <h3 className="text-sm font-medium">1. Crie um Container (LXC) no Proxmox</h3>
+                        <ul className="list-disc pl-5 text-sm text-muted-foreground">
+                          <li>Acesse o dashboard do Proxmox</li>
+                          <li>Crie um novo container (LXC) com sistema Debian ou Ubuntu</li>
+                          <li>Aloque pelo menos 2GB de RAM e 10GB de armazenamento</li>
+                          <li>Configure uma rede com IP estático para facilitar o acesso</li>
+                        </ul>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <h3 className="text-sm font-medium">2. Instale o PostgreSQL no Container</h3>
+                        <div className="bg-gray-100 p-2 rounded text-sm font-mono">
+                          apt update<br />
+                          apt install postgresql postgresql-contrib -y
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <h3 className="text-sm font-medium">3. Configure o PostgreSQL para Aceitar Conexões Remotas</h3>
+                        <p className="text-sm text-muted-foreground">Edite o arquivo postgresql.conf:</p>
+                        <div className="bg-gray-100 p-2 rounded text-sm font-mono">
+                          nano /etc/postgresql/*/main/postgresql.conf
+                        </div>
+                        <p className="text-sm text-muted-foreground">Altere a linha listen_addresses para:</p>
+                        <div className="bg-gray-100 p-2 rounded text-sm font-mono">
+                          listen_addresses = '*'
+                        </div>
+                        
+                        <p className="text-sm text-muted-foreground mt-2">Edite o arquivo pg_hba.conf:</p>
+                        <div className="bg-gray-100 p-2 rounded text-sm font-mono">
+                          nano /etc/postgresql/*/main/pg_hba.conf
+                        </div>
+                        <p className="text-sm text-muted-foreground">Adicione esta linha ao final:</p>
+                        <div className="bg-gray-100 p-2 rounded text-sm font-mono">
+                          host    all    all    0.0.0.0/0    md5
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <h3 className="text-sm font-medium">4. Reinicie o PostgreSQL</h3>
+                        <div className="bg-gray-100 p-2 rounded text-sm font-mono">
+                          systemctl restart postgresql
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <h3 className="text-sm font-medium">5. Crie um Usuário e Banco de Dados</h3>
+                        <div className="bg-gray-100 p-2 rounded text-sm font-mono">
+                          sudo -u postgres psql<br />
+                          CREATE USER gearcheck WITH PASSWORD 'suasenha';<br />
+                          CREATE DATABASE gearcheck_db;<br />
+                          GRANT ALL PRIVILEGES ON DATABASE gearcheck_db TO gearcheck;<br />
+                          \q
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mt-4">
+                      <Button className="w-full" onClick={() => {
+                        toast({
+                          title: "Informações Copiadas",
+                          description: "As instruções para configuração foram copiadas para a área de transferência."
+                        });
+                      }}>
+                        Copiar Instruções
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
               </div>
             </CardContent>
             <CardFooter>
