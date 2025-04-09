@@ -11,8 +11,31 @@ const SignatureCanvas: React.FC<SignatureCanvasProps> = ({ onSignatureChange }) 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasSignature, setHasSignature] = useState(false);
+  const [canvasWidth, setCanvasWidth] = useState(600);
+  const [canvasHeight, setCanvasHeight] = useState(150);
+
+  // Função para ajustar o tamanho do canvas com base no container
+  const resizeCanvas = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const container = canvas.parentElement;
+    if (!container) return;
+    
+    const containerWidth = container.clientWidth;
+    setCanvasWidth(containerWidth - 2); // -2 para a borda
+    
+    // Redefine o contexto depois de redimensionar
+    const ctx = canvas.getContext("2d");
+    if (ctx) {
+      ctx.lineWidth = 2;
+      ctx.lineCap = "round";
+      ctx.strokeStyle = "#000";
+    }
+  };
 
   useEffect(() => {
+    // Configuração inicial
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -22,6 +45,15 @@ const SignatureCanvas: React.FC<SignatureCanvasProps> = ({ onSignatureChange }) 
       ctx.lineCap = "round";
       ctx.strokeStyle = "#000";
     }
+    
+    // Configurar o redimensionamento inicial e adicionar listener para redimensionamento da janela
+    resizeCanvas();
+    window.addEventListener("resize", resizeCanvas);
+    
+    // Limpar o event listener
+    return () => {
+      window.removeEventListener("resize", resizeCanvas);
+    };
   }, []);
 
   const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
@@ -128,8 +160,8 @@ const SignatureCanvas: React.FC<SignatureCanvasProps> = ({ onSignatureChange }) 
       <div className="border rounded-md p-1 bg-white">
         <canvas
           ref={canvasRef}
-          width={600}
-          height={150}
+          width={canvasWidth}
+          height={canvasHeight}
           className="w-full touch-none cursor-crosshair border-dashed border border-gray-300 rounded"
           onMouseDown={startDrawing}
           onMouseMove={draw}

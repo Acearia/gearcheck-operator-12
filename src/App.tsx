@@ -14,6 +14,7 @@ import AdminOperators from "./pages/AdminOperators";
 import AdminEquipment from "./pages/AdminEquipment";
 import AdminReports from "./pages/AdminReports";
 import AdminSettings from "./pages/AdminSettings";
+import DatabaseConnection from "./pages/DatabaseConnection";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +27,7 @@ const App = () => (
         <Routes>
           {/* Public routes */}
           <Route path="/" element={<Index />} />
+          <Route path="/database" element={<DatabaseConnection />} />
           
           {/* Admin routes */}
           <Route path="/admin/login" element={<AdminLogin />} />
@@ -36,6 +38,7 @@ const App = () => (
             <Route path="equipment" element={<AdminEquipment />} />
             <Route path="reports" element={<AdminReports />} />
             <Route path="settings" element={<AdminSettings />} />
+            <Route path="database" element={<DatabaseConnection />} />
           </Route>
           
           {/* Catch-all route */}

@@ -32,10 +32,10 @@ import {
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Nome deve ter pelo menos 2 caracteres" }),
-  type: z.string().min(1, { message: "Selecione um tipo" }),
+  type: z.string().min(1, { message: "Tipo é obrigatório" }),
   kp: z.string().min(1, { message: "KP é obrigatório" }),
-  sector: z.string().min(1, { message: "Setor é obrigatório" }),
-  capacity: z.string().min(1, { message: "Capacidade é obrigatória" }),
+  sector: z.string().optional(),
+  capacity: z.string().optional(),
 });
 
 export function AddEquipmentDialog({
@@ -65,10 +65,18 @@ export function AddEquipmentDialog({
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    // Make sure all required fields are present
-    if (!values.name || !values.type || !values.kp || !values.sector || !values.capacity) return;
+    // Ensure all required fields have values
+    if (!values.name.trim() || !values.type.trim() || !values.kp.trim()) return;
     
-    onAddEquipment(values);
+    // Now we're sure required fields have values
+    onAddEquipment({
+      name: values.name,
+      type: values.type,
+      kp: values.kp,
+      sector: values.sector || "",
+      capacity: values.capacity || "",
+    });
+    
     form.reset();
     onOpenChange(false);
   }
