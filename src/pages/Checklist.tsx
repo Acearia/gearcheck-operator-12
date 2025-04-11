@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Check, X, ChevronDown, ArrowLeft } from "lucide-react";
@@ -226,12 +225,8 @@ const Checklist = () => {
             )}
           </div>
 
-          <div className="mb-4 grid grid-cols-3 gap-4 items-center">
-            <div className="flex items-center">
-              <span className="text-red-500 mr-1">*</span>
-              <span>Equip</span>
-            </div>
-            <div className="col-span-2">
+          <div className="mb-4 grid grid-cols-1 gap-4">
+            <div className="w-full">
               <Select onValueChange={handleEquipmentSelect}>
                 <SelectTrigger className="w-full bg-white">
                   <SelectValue placeholder="Selecione o equipamento" />
@@ -247,55 +242,47 @@ const Checklist = () => {
             </div>
 
             {selectedEquipment && (
-              <>
-                <div className="flex items-center">
-                  <span>KP</span>
-                </div>
-                <div className="col-span-2">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col">
+                  <span className="text-sm text-gray-500 mb-1">KP</span>
                   <input 
                     type="text" 
                     value={selectedEquipment.kp} 
-                    className="w-full px-4 py-2 border border-gray-300 rounded bg-gray-100" 
+                    className="px-4 py-2 border border-gray-300 rounded bg-gray-100" 
                     readOnly 
                   />
                 </div>
 
-                <div className="flex items-center">
-                  <span>Tipo</span>
-                </div>
-                <div className="col-span-2">
+                <div className="flex flex-col">
+                  <span className="text-sm text-gray-500 mb-1">Tipo</span>
                   <input 
                     type="text" 
                     value={getEquipmentTypeText(selectedEquipment.type)} 
-                    className="w-full px-4 py-2 border border-gray-300 rounded bg-gray-100" 
+                    className="px-4 py-2 border border-gray-300 rounded bg-gray-100" 
                     readOnly 
                   />
                 </div>
 
-                <div className="flex items-center">
-                  <span>Setor</span>
-                </div>
-                <div className="col-span-2">
+                <div className="flex flex-col">
+                  <span className="text-sm text-gray-500 mb-1">Setor</span>
                   <input 
                     type="text" 
                     value={selectedEquipment.sector} 
-                    className="w-full px-4 py-2 border border-gray-300 rounded bg-gray-100" 
+                    className="px-4 py-2 border border-gray-300 rounded bg-gray-100" 
                     readOnly 
                   />
                 </div>
 
-                <div className="flex items-center">
-                  <span>Capacidade</span>
-                </div>
-                <div className="col-span-2">
+                <div className="flex flex-col">
+                  <span className="text-sm text-gray-500 mb-1">Capacidade</span>
                   <input 
                     type="text" 
                     value={selectedEquipment.capacity} 
-                    className="w-full px-4 py-2 border border-gray-300 rounded bg-gray-100" 
+                    className="px-4 py-2 border border-gray-300 rounded bg-gray-100" 
                     readOnly 
                   />
                 </div>
-              </>
+              </div>
             )}
           </div>
 
