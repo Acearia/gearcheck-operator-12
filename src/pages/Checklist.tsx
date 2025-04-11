@@ -186,29 +186,19 @@ const Checklist = () => {
       <div className="flex-1 overflow-auto p-4 max-w-3xl mx-auto w-full">
         <form onSubmit={handleSubmit}>
           <div className="mb-6">
-            <div className="flex gap-2 items-center">
-              <div className="w-20 h-10 border border-gray-300 rounded overflow-hidden">
-                <input 
-                  type="text" 
-                  value={selectedOperator?.id || ""}
-                  className="w-full h-full px-2 text-center" 
-                  readOnly
-                />
-              </div>
-              <div className="flex-1">
-                <Select onValueChange={handleOperatorSelect}>
-                  <SelectTrigger className="w-full bg-white flex h-10">
-                    <SelectValue placeholder="Selecione um operador" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {operators.map(operator => (
-                      <SelectItem key={operator.id} value={operator.id}>
-                        {operator.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="w-full">
+              <Select onValueChange={handleOperatorSelect}>
+                <SelectTrigger className="w-full bg-white h-10">
+                  <SelectValue placeholder="Selecione um operador" />
+                </SelectTrigger>
+                <SelectContent>
+                  {operators.map(operator => (
+                    <SelectItem key={operator.id} value={operator.id}>
+                      {operator.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             
             {selectedOperator && (
