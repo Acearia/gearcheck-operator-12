@@ -1,4 +1,3 @@
-
 export interface Operator {
   id: string;
   name: string;
@@ -18,7 +17,7 @@ export interface Equipment {
 export interface ChecklistItem {
   id: string;
   question: string;
-  answer: "Sim" | "Não" | "Selecione" | null;
+  answer: "Sim" | "Não" | "N/A" | "Selecione" | null;
 }
 
 // Lista de operadores atualizada com os dados da planilha

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Check, X, ChevronDown, ArrowLeft } from "lucide-react";
@@ -65,7 +64,7 @@ const Checklist = () => {
     setSelectedEquipment(equipment);
   };
 
-  const handleChecklistChange = (id: string, answer: "Sim" | "Não" | "Selecione") => {
+  const handleChecklistChange = (id: string, answer: "Sim" | "Não" | "N/A" | "Selecione") => {
     setChecklist(prevChecklist => 
       prevChecklist.map(item => 
         item.id === id ? { ...item, answer } : item
@@ -309,7 +308,7 @@ const Checklist = () => {
                   <div className="w-full sm:w-36">
                     <Select
                       onValueChange={(value) => 
-                        handleChecklistChange(item.id, value as "Sim" | "Não" | "Selecione")
+                        handleChecklistChange(item.id, value as "Sim" | "Não" | "N/A" | "Selecione")
                       }
                       value={item.answer || "Selecione"}
                     >
@@ -320,6 +319,7 @@ const Checklist = () => {
                         <SelectItem value="Selecione">Selecione</SelectItem>
                         <SelectItem value="Sim">Sim</SelectItem>
                         <SelectItem value="Não">Não</SelectItem>
+                        <SelectItem value="N/A">N/A (Não se Aplica)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
