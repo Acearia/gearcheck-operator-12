@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Check, X, ChevronDown, ArrowLeft } from "lucide-react";
@@ -319,7 +320,7 @@ const Checklist = () => {
                         <SelectItem value="Selecione">Selecione</SelectItem>
                         <SelectItem value="Sim">Sim</SelectItem>
                         <SelectItem value="Não">Não</SelectItem>
-                        <SelectItem value="N/A">N/A (Não se Aplica)</SelectItem>
+                        <SelectItem value="N/A">N/A</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
