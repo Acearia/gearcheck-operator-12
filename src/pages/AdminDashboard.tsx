@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
@@ -20,10 +19,8 @@ import {
   Cell
 } from "recharts";
 
-// Zeroed data for dashboard
-const recentInspections = [
-  // Empty array - no inspections yet
-];
+// Dados reais (zerados inicialmente)
+const recentInspections = [];
 
 const inspectionsByMonth = [
   { month: "Jan", total: 0 },
@@ -49,25 +46,25 @@ const AdminDashboard = () => {
         <StatsCard
           title="Total de Inspeções"
           value="0"
-          description="Últimos 30 dias"
+          description="Aguardando dados reais"
           icon={<ClipboardList className="h-8 w-8 text-blue-500" />}
         />
         <StatsCard
           title="Problemas Identificados"
           value="0"
-          description="Precisam de atenção"
+          description="Aguardando dados reais"
           icon={<AlertTriangle className="h-8 w-8 text-red-500" />}
         />
         <StatsCard
           title="Equipamentos"
           value="0"
-          description="Em operação"
+          description="Aguardando dados reais"
           icon={<Wrench className="h-8 w-8 text-purple-500" />}
         />
         <StatsCard
           title="Operadores"
           value="0"
-          description="Ativos"
+          description="Aguardando dados reais"
           icon={<User className="h-8 w-8 text-green-500" />}
         />
       </div>
@@ -77,7 +74,7 @@ const AdminDashboard = () => {
         <Card>
           <CardHeader>
             <CardTitle>Inspeções por Mês</CardTitle>
-            <CardDescription>Número total de inspeções realizadas</CardDescription>
+            <CardDescription>Aguardando dados reais</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-80">
@@ -97,7 +94,7 @@ const AdminDashboard = () => {
         <Card>
           <CardHeader>
             <CardTitle>Status dos Equipamentos</CardTitle>
-            <CardDescription>Resultado das últimas inspeções</CardDescription>
+            <CardDescription>Aguardando dados reais</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-80">
@@ -129,7 +126,7 @@ const AdminDashboard = () => {
       <Card>
         <CardHeader>
           <CardTitle>Inspeções Recentes</CardTitle>
-          <CardDescription>Nenhuma inspeção realizada ainda</CardDescription>
+          <CardDescription>Aguardando dados reais</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
@@ -168,7 +165,7 @@ const AdminDashboard = () => {
               </table>
             ) : (
               <div className="text-center py-6 text-gray-500">
-                Nenhuma inspeção encontrada. As inspeções realizadas aparecerão aqui.
+                Nenhum dado disponível. As inspeções aparecerão aqui quando forem registradas.
               </div>
             )}
           </div>
