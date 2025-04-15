@@ -20,27 +20,23 @@ import {
   Cell
 } from "recharts";
 
-// Sample data - replace with real data from database
+// Zeroed data for dashboard
 const recentInspections = [
-  { id: 1, equipment: "Ponte 01", operator: "VALDAIR LAURENTINO", date: "2025-04-07", status: "ok" },
-  { id: 2, equipment: "Ponte 02", operator: "ELIEL PEREIRA FERNANDES", date: "2025-04-06", status: "issue" },
-  { id: 3, equipment: "Talha 19", operator: "JOAO CARLOS VANELLI", date: "2025-04-05", status: "ok" },
-  { id: 4, equipment: "Ponte 07", operator: "LUAN SCHIAVON CASTRO", date: "2025-04-04", status: "ok" },
-  { id: 5, equipment: "Ponte 05", operator: "CARLOS DOS SANTOS", date: "2025-04-03", status: "issue" },
+  // Empty array - no inspections yet
 ];
 
 const inspectionsByMonth = [
-  { month: "Jan", total: 24 },
-  { month: "Fev", total: 28 },
-  { month: "Mar", total: 32 },
-  { month: "Abr", total: 18 },
-  { month: "Mai", total: 26 },
-  { month: "Jun", total: 30 },
+  { month: "Jan", total: 0 },
+  { month: "Fev", total: 0 },
+  { month: "Mar", total: 0 },
+  { month: "Abr", total: 0 },
+  { month: "Mai", total: 0 },
+  { month: "Jun", total: 0 },
 ];
 
 const equipmentIssues = [
-  { name: "Sem problemas", value: 75, color: "#22c55e" },
-  { name: "Problemas encontrados", value: 25, color: "#ef4444" },
+  { name: "Sem problemas", value: 0, color: "#22c55e" },
+  { name: "Problemas encontrados", value: 0, color: "#ef4444" },
 ];
 
 const AdminDashboard = () => {
@@ -52,25 +48,25 @@ const AdminDashboard = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatsCard
           title="Total de Inspeções"
-          value="128"
+          value="0"
           description="Últimos 30 dias"
           icon={<ClipboardList className="h-8 w-8 text-blue-500" />}
         />
         <StatsCard
           title="Problemas Identificados"
-          value="12"
+          value="0"
           description="Precisam de atenção"
           icon={<AlertTriangle className="h-8 w-8 text-red-500" />}
         />
         <StatsCard
           title="Equipamentos"
-          value="24"
+          value="0"
           description="Em operação"
           icon={<Wrench className="h-8 w-8 text-purple-500" />}
         />
         <StatsCard
           title="Operadores"
-          value="62"
+          value="0"
           description="Ativos"
           icon={<User className="h-8 w-8 text-green-500" />}
         />
@@ -133,42 +129,48 @@ const AdminDashboard = () => {
       <Card>
         <CardHeader>
           <CardTitle>Inspeções Recentes</CardTitle>
-          <CardDescription>Últimas 5 inspeções realizadas</CardDescription>
+          <CardDescription>Nenhuma inspeção realizada ainda</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4">Equipamento</th>
-                  <th className="text-left py-3 px-4">Operador</th>
-                  <th className="text-left py-3 px-4">Data</th>
-                  <th className="text-left py-3 px-4">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentInspections.map((inspection) => (
-                  <tr key={inspection.id} className="border-b border-gray-200 hover:bg-gray-50">
-                    <td className="py-3 px-4">{inspection.equipment}</td>
-                    <td className="py-3 px-4">{inspection.operator}</td>
-                    <td className="py-3 px-4">
-                      {new Date(inspection.date).toLocaleDateString('pt-BR')}
-                    </td>
-                    <td className="py-3 px-4">
-                      {inspection.status === "ok" ? (
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          OK
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                          Problema
-                        </span>
-                      )}
-                    </td>
+            {recentInspections.length > 0 ? (
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    <th className="text-left py-3 px-4">Equipamento</th>
+                    <th className="text-left py-3 px-4">Operador</th>
+                    <th className="text-left py-3 px-4">Data</th>
+                    <th className="text-left py-3 px-4">Status</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {recentInspections.map((inspection) => (
+                    <tr key={inspection.id} className="border-b border-gray-200 hover:bg-gray-50">
+                      <td className="py-3 px-4">{inspection.equipment}</td>
+                      <td className="py-3 px-4">{inspection.operator}</td>
+                      <td className="py-3 px-4">
+                        {new Date(inspection.date).toLocaleDateString('pt-BR')}
+                      </td>
+                      <td className="py-3 px-4">
+                        {inspection.status === "ok" ? (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            OK
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                            Problema
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <div className="text-center py-6 text-gray-500">
+                Nenhuma inspeção encontrada. As inspeções realizadas aparecerão aqui.
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
