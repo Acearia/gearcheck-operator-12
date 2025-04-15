@@ -1,4 +1,5 @@
-import React from "react";
+
+import React, { useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
   ClipboardList, 
@@ -18,25 +19,39 @@ import {
   Pie,
   Cell
 } from "recharts";
+import { operators, equipments } from "@/lib/data";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
-// Dados reais (zerados inicialmente)
+// Mocked inspection data - will be replaced by real data from database
 const recentInspections = [];
 
-const inspectionsByMonth = [
-  { month: "Jan", total: 0 },
-  { month: "Fev", total: 0 },
-  { month: "Mar", total: 0 },
-  { month: "Abr", total: 0 },
-  { month: "Mai", total: 0 },
-  { month: "Jun", total: 0 },
-];
-
-const equipmentIssues = [
-  { name: "Sem problemas", value: 0, color: "#22c55e" },
-  { name: "Problemas encontrados", value: 0, color: "#ef4444" },
-];
-
 const AdminDashboard = () => {
+  // Calculate stats from available data
+  const stats = useMemo(() => {
+    return {
+      totalOperators: operators.length,
+      totalEquipments: equipments.length,
+      totalInspections: recentInspections.length,
+      problemsIdentified: recentInspections.filter(i => i.status === "problem").length
+    };
+  }, []);
+
+  // Create monthly data - currently zeroed
+  const inspectionsByMonth = [
+    { month: "Jan", total: 0 },
+    { month: "Fev", total: 0 },
+    { month: "Mar", total: 0 },
+    { month: "Abr", total: 0 },
+    { month: "Mai", total: 0 },
+    { month: "Jun", total: 0 },
+  ];
+
+  // Equipment status data
+  const equipmentIssues = [
+    { name: "Sem problemas", value: equipments.length, color: "#22c55e" },
+    { name: "Problemas encontrados", value: 0, color: "#ef4444" },
+  ];
+
   return (
     <div>
       <h1 className="text-2xl font-bold mb-6">Dashboard Administrativo</h1>
@@ -45,26 +60,26 @@ const AdminDashboard = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatsCard
           title="Total de Inspeções"
-          value="0"
-          description="Aguardando dados reais"
+          value={stats.totalInspections.toString()}
+          description="Aguardando dados de inspeções"
           icon={<ClipboardList className="h-8 w-8 text-blue-500" />}
         />
         <StatsCard
           title="Problemas Identificados"
-          value="0"
-          description="Aguardando dados reais"
+          value={stats.problemsIdentified.toString()}
+          description="Aguardando dados de inspeções"
           icon={<AlertTriangle className="h-8 w-8 text-red-500" />}
         />
         <StatsCard
           title="Equipamentos"
-          value="0"
-          description="Aguardando dados reais"
+          value={stats.totalEquipments.toString()}
+          description={`${stats.totalEquipments} equipamentos cadastrados`}
           icon={<Wrench className="h-8 w-8 text-purple-500" />}
         />
         <StatsCard
           title="Operadores"
-          value="0"
-          description="Aguardando dados reais"
+          value={stats.totalOperators.toString()}
+          description={`${stats.totalOperators} operadores cadastrados`}
           icon={<User className="h-8 w-8 text-green-500" />}
         />
       </div>
@@ -74,7 +89,7 @@ const AdminDashboard = () => {
         <Card>
           <CardHeader>
             <CardTitle>Inspeções por Mês</CardTitle>
-            <CardDescription>Aguardando dados reais</CardDescription>
+            <CardDescription>Aguardando dados de inspeções</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-80">
@@ -94,7 +109,7 @@ const AdminDashboard = () => {
         <Card>
           <CardHeader>
             <CardTitle>Status dos Equipamentos</CardTitle>
-            <CardDescription>Aguardando dados reais</CardDescription>
+            <CardDescription>Equipamentos cadastrados: {stats.totalEquipments}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-80">
@@ -126,29 +141,29 @@ const AdminDashboard = () => {
       <Card>
         <CardHeader>
           <CardTitle>Inspeções Recentes</CardTitle>
-          <CardDescription>Aguardando dados reais</CardDescription>
+          <CardDescription>Aguardando dados de inspeções</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            {recentInspections.length > 0 ? (
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-3 px-4">Equipamento</th>
-                    <th className="text-left py-3 px-4">Operador</th>
-                    <th className="text-left py-3 px-4">Data</th>
-                    <th className="text-left py-3 px-4">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
+          {recentInspections.length > 0 ? (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Equipamento</TableHead>
+                    <TableHead>Operador</TableHead>
+                    <TableHead>Data</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {recentInspections.map((inspection) => (
-                    <tr key={inspection.id} className="border-b border-gray-200 hover:bg-gray-50">
-                      <td className="py-3 px-4">{inspection.equipment}</td>
-                      <td className="py-3 px-4">{inspection.operator}</td>
-                      <td className="py-3 px-4">
+                    <TableRow key={inspection.id}>
+                      <TableCell>{inspection.equipment}</TableCell>
+                      <TableCell>{inspection.operator}</TableCell>
+                      <TableCell>
                         {new Date(inspection.date).toLocaleDateString('pt-BR')}
-                      </td>
-                      <td className="py-3 px-4">
+                      </TableCell>
+                      <TableCell>
                         {inspection.status === "ok" ? (
                           <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                             OK
@@ -158,16 +173,56 @@ const AdminDashboard = () => {
                             Problema
                           </span>
                         )}
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
-            ) : (
-              <div className="text-center py-6 text-gray-500">
-                Nenhum dado disponível. As inspeções aparecerão aqui quando forem registradas.
-              </div>
-            )}
+                </TableBody>
+              </Table>
+            </div>
+          ) : (
+            <div className="text-center py-6 text-gray-500">
+              Nenhuma inspeção encontrada. As inspeções serão exibidas aqui quando forem registradas.
+            </div>
+          )}
+        </CardContent>
+      </Card>
+      
+      {/* Equipment List */}
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle>Equipamentos Cadastrados</CardTitle>
+          <CardDescription>Lista de todos os equipamentos disponíveis</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>ID</TableHead>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>KP</TableHead>
+                  <TableHead>Setor</TableHead>
+                  <TableHead>Capacidade</TableHead>
+                  <TableHead>Tipo</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {equipments.map((equipment) => (
+                  <TableRow key={equipment.id}>
+                    <TableCell>{equipment.id}</TableCell>
+                    <TableCell>{equipment.name}</TableCell>
+                    <TableCell>{equipment.kp}</TableCell>
+                    <TableCell>{equipment.sector}</TableCell>
+                    <TableCell>{equipment.capacity}</TableCell>
+                    <TableCell>
+                      {equipment.type === "1" ? "Ponte" : 
+                       equipment.type === "2" ? "Talha" : 
+                       equipment.type === "3" ? "Pórtico" : equipment.type}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
         </CardContent>
       </Card>
