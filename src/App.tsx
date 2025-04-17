@@ -30,7 +30,7 @@ const App = () => (
           {/* Public routes */}
           <Route path="/" element={<Index />} />
           <Route path="/checklist" element={<Checklist />} />
-          <Route path="/database" element={<DatabaseConnection />} />
+          <Route path="/leader" element={<LeaderDashboard />} />
           
           {/* Admin routes */}
           <Route path="/admin/login" element={<AdminLogin />} />
@@ -42,7 +42,6 @@ const App = () => (
             <Route path="reports" element={<AdminReports />} />
             <Route path="settings" element={<AdminSettings />} />
             <Route path="database" element={<DatabaseConnection />} />
-            <Route path="leader" element={<LeaderDashboard />} />
           </Route>
           
           {/* Catch-all route */}
