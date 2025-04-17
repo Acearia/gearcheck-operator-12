@@ -16,6 +16,7 @@ import AdminEquipment from "./pages/AdminEquipment";
 import AdminReports from "./pages/AdminReports";
 import AdminSettings from "./pages/AdminSettings";
 import DatabaseConnection from "./pages/DatabaseConnection";
+import LeaderDashboard from "./pages/LeaderDashboard";
 
 const queryClient = new QueryClient();
 
@@ -41,6 +42,7 @@ const App = () => (
             <Route path="reports" element={<AdminReports />} />
             <Route path="settings" element={<AdminSettings />} />
             <Route path="database" element={<DatabaseConnection />} />
+            <Route path="leader" element={<LeaderDashboard />} />
           </Route>
           
           {/* Catch-all route */}
