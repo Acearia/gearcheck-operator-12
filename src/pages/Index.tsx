@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link } from "react-router-dom";
 import { ClipboardCheck, Settings, Briefcase } from "lucide-react";
@@ -13,7 +12,7 @@ const Index = () => {
         <div className="text-white font-bold text-lg">GearCheck</div>
         <h1 className="font-bold text-lg">Inspeção de Equipamentos</h1>
         <div className="flex gap-2">
-          <Link to="/leader" className="text-white">
+          <Link to="/leader/login" className="text-white">
             <Briefcase size={24} />
           </Link>
           <Link to="/admin/login" className="text-white">
@@ -58,7 +57,7 @@ const Index = () => {
                   <p className="text-gray-600 mb-6">Acesse o dashboard de líderes do sistema</p>
                 </div>
                 
-                <Link to="/leader">
+                <Link to="/leader/login">
                   <Button 
                     className="w-full py-8 bg-blue-700 hover:bg-blue-800 text-white text-lg flex flex-col items-center gap-2"
                   >

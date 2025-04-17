@@ -1,5 +1,5 @@
-
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { 
   Card, 
   CardContent, 
@@ -26,7 +26,7 @@ import {
   CheckCircle, 
   Filter, 
   RefreshCw,
-
+  LogOut,
   Wrench, 
   Database, 
   User 
@@ -41,6 +41,7 @@ import {
 } from "@/components/ui/select";
 
 const LeaderDashboard = () => {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
   const [dbConnectionStatus, setDbConnectionStatus] = useState<'unchecked' | 'connected' | 'error'>('unchecked');
@@ -59,8 +60,25 @@ const LeaderDashboard = () => {
   const [inspections, setInspections] = useState<any[]>([]);
 
   useEffect(() => {
+    const isAuthenticated = localStorage.getItem("gearcheck-leader-auth");
+    const leaderSector = localStorage.getItem("gearcheck-leader-sector");
+    
+    if (!isAuthenticated) {
+      toast({
+        title: "Acesso não autorizado",
+        description: "Por favor, faça login para acessar o dashboard de líderes",
+        variant: "destructive",
+      });
+      navigate("/leader/login");
+      return;
+    }
+    
+    if (leaderSector) {
+      setSectorFilter(leaderSector);
+    }
+    
     checkDatabaseConnection();
-  }, []);
+  }, [navigate, toast]);
 
   const checkDatabaseConnection = async () => {
     try {
@@ -90,14 +108,11 @@ const LeaderDashboard = () => {
 
   const loadDashboardData = async () => {
     try {
-      // Simular tempo de carregamento
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Carregar dados de inspeções do localStorage
       const savedInspections = localStorage.getItem('gearcheck-inspections');
       const inspections = savedInspections ? JSON.parse(savedInspections) : [];
       
-      // Identificar problemas (respostas "Não" nos checklists)
       const problems = [];
       inspections.forEach(inspection => {
         inspection.checklist.forEach(item => {
@@ -117,11 +132,9 @@ const LeaderDashboard = () => {
       
       setProblemsList(problems);
       
-      // Extrair setores únicos
       const uniqueSectors = Array.from(new Set(problems.map(p => p.sector)));
       setSectors(uniqueSectors);
       
-      // Extrair operadores únicos
       const uniqueOperators = Array.from(new Set(inspections.map(i => i.operator.id)))
         .map(id => {
           const inspection = inspections.find(i => i.operator.id === id);
@@ -132,7 +145,6 @@ const LeaderDashboard = () => {
         });
       setOperators(uniqueOperators);
       
-      // Dados para o gráfico de problemas por equipamento
       const problemsByEquip = [];
       const equipmentCounts = {};
       
@@ -151,7 +163,6 @@ const LeaderDashboard = () => {
       setProblemsByEquipment(problemsByEquip);
       setInspections(inspections);
       
-      // Estatísticas gerais
       setStats({
         totalInspections: inspections.length,
         problemInspections: problems.length > 0 ? new Set(problems.map(p => `${p.equipment.id}-${p.date}`)).size : 0,
@@ -182,7 +193,6 @@ const LeaderDashboard = () => {
     let matchesSector = sectorFilter === "all" || problem.sector === sectorFilter;
     let matchesOperator = operatorFilter === "all" || problem.operator.id === operatorFilter;
     
-    // Filtrar por período de tempo
     const problemDate = new Date(problem.date);
     const today = new Date();
     let matchesTimeRange = true;
@@ -229,11 +239,28 @@ const LeaderDashboard = () => {
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Dashboard de Líderes</h1>
-        <Button onClick={handleRefreshData} variant="outline" className="flex items-center gap-2">
-          <RefreshCw className="h-4 w-4" />
-          Atualizar
-        </Button>
+        <div>
+          <h1 className="text-2xl font-bold">Dashboard de Líderes</h1>
+          <p className="text-gray-600">Setor: {sectorFilter}</p>
+        </div>
+        <div className="flex gap-2">
+          <Button onClick={handleRefreshData} variant="outline" className="flex items-center gap-2">
+            <RefreshCw className="h-4 w-4" />
+            Atualizar
+          </Button>
+          <Button 
+            onClick={() => {
+              localStorage.removeItem("gearcheck-leader-auth");
+              localStorage.removeItem("gearcheck-leader-sector");
+              navigate("/leader/login");
+            }} 
+            variant="outline" 
+            className="flex items-center gap-2 text-red-700 hover:text-red-800"
+          >
+            <LogOut className="h-4 w-4" />
+            Sair
+          </Button>
+        </div>
       </div>
       
       {dbConnectionStatus === 'error' && (
@@ -455,7 +482,7 @@ const LeaderDashboard = () => {
         <TabsContent value="inspections">
           <Card>
             <CardHeader>
-              <CardTitle>Últimas Inspeções</CardTitle>
+              <CardTitle>Últimas Inspeções</Title>
               <CardDescription>
                 {inspections.length === 0 
                   ? "Nenhuma inspeção registrada" 
@@ -480,7 +507,6 @@ const LeaderDashboard = () => {
                     </TableHeader>
                     <TableBody>
                       {inspections.slice(0, 10).map((inspection, index) => {
-                        // Verificar se a inspeção tem algum problema
                         const hasProblems = inspection.checklist.some(item => item.answer === 'Não');
                         
                         return (

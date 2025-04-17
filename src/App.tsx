@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import Checklist from "./pages/Checklist";
 import NotFound from "./pages/NotFound";
 import AdminLogin from "./pages/AdminLogin";
+import LeaderLogin from "./pages/LeaderLogin";
 import AdminLayout from "./components/AdminLayout";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminInspections from "./pages/AdminInspections";
@@ -30,6 +31,7 @@ const App = () => (
           {/* Public routes */}
           <Route path="/" element={<Index />} />
           <Route path="/checklist" element={<Checklist />} />
+          <Route path="/leader/login" element={<LeaderLogin />} />
           <Route path="/leader" element={<LeaderDashboard />} />
           
           {/* Admin routes */}
