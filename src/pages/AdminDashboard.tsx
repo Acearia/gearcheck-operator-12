@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BarChart, LineChart, PieChart } from "@/components/ui/chart";
+import { BarChart, LineChart, PieChart } from "@/components/ui/charts";
 import { Link } from "react-router-dom";
 import { CheckCircle, Database, AlertCircle, RefreshCw, BarChart as BarChartIcon, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
