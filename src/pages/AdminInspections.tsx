@@ -1,12 +1,23 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { 
   Select, 
   SelectContent, 
@@ -14,188 +25,200 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { 
-  AlertTriangle, 
-  CalendarClock, 
-  CheckCircle2, 
-  ChevronLeft, 
-  ChevronRight, 
-  Download, 
-  Eye, 
-  Search, 
-  SlidersHorizontal 
-} from "lucide-react";
-
-// Sample data - replace with real data from database
-const inspections = [
-  { 
-    id: "1", 
-    equipment: "Ponte 01", 
-    operator: "VALDAIR LAURENTINO", 
-    date: "2025-04-07", 
-    time: "09:15", 
-    status: "ok",
-    issues: 0
-  },
-  { 
-    id: "2", 
-    equipment: "Ponte 02", 
-    operator: "ELIEL PEREIRA FERNANDES", 
-    date: "2025-04-06", 
-    time: "14:30", 
-    status: "issue",
-    issues: 2
-  },
-  { 
-    id: "3", 
-    equipment: "Talha 19", 
-    operator: "JOAO CARLOS VANELLI", 
-    date: "2025-04-05", 
-    time: "11:45", 
-    status: "ok",
-    issues: 0
-  },
-  { 
-    id: "4", 
-    equipment: "Ponte 07", 
-    operator: "LUAN SCHIAVON CASTRO", 
-    date: "2025-04-04", 
-    time: "08:20", 
-    status: "ok",
-    issues: 0
-  },
-  { 
-    id: "5", 
-    equipment: "Ponte 05", 
-    operator: "CARLOS DOS SANTOS", 
-    date: "2025-04-03", 
-    time: "16:15", 
-    status: "issue",
-    issues: 1
-  },
-  { 
-    id: "6", 
-    equipment: "Ponte 03", 
-    operator: "GILMAR OTEMBRAIT", 
-    date: "2025-04-02", 
-    time: "10:30", 
-    status: "ok",
-    issues: 0
-  },
-  { 
-    id: "7", 
-    equipment: "Talha 23", 
-    operator: "JOSE PEREIRA", 
-    date: "2025-04-01", 
-    time: "13:45", 
-    status: "issue",
-    issues: 3
-  },
-  { 
-    id: "8", 
-    equipment: "Ponte 09", 
-    operator: "RAFAEL CLEMENTE ESPIG", 
-    date: "2025-03-31", 
-    time: "09:00", 
-    status: "ok",
-    issues: 0
-  },
-  { 
-    id: "9", 
-    equipment: "Pórtico 01", 
-    operator: "MAURICIO MELCHIORETTO", 
-    date: "2025-03-30", 
-    time: "15:20", 
-    status: "issue",
-    issues: 1
-  },
-  { 
-    id: "10", 
-    equipment: "Ponte 11", 
-    operator: "ALTAMIR BORGES", 
-    date: "2025-03-29", 
-    time: "11:10", 
-    status: "ok",
-    issues: 0
-  },
-];
+import { Eye, Download, Database } from "lucide-react";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { useToast } from "@/hooks/use-toast";
+import { Link } from "react-router-dom";
 
 const AdminInspections = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
+  const { toast } = useToast();
+  const [inspections, setInspections] = useState<any[]>([]);
+  const [selectedInspection, setSelectedInspection] = useState<any>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [dbConnectionStatus, setDbConnectionStatus] = useState<'unchecked' | 'connected' | 'error'>('unchecked');
+  const [filterEquipment, setFilterEquipment] = useState<string>("all");
+  const [filterOperator, setFilterOperator] = useState<string>("all");
+  const [uniqueEquipments, setUniqueEquipments] = useState<{id: string, name: string}[]>([]);
+  const [uniqueOperators, setUniqueOperators] = useState<{id: string, name: string}[]>([]);
 
-  // Filter inspections based on search term and status filter
-  const filteredInspections = inspections.filter(inspection => {
-    const matchesSearch = 
-      inspection.equipment.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      inspection.operator.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = 
-      statusFilter === "all" || 
-      (statusFilter === "ok" && inspection.status === "ok") ||
-      (statusFilter === "issue" && inspection.status === "issue");
-    
-    return matchesSearch && matchesStatus;
+  useEffect(() => {
+    checkDatabaseConnection();
+  }, []);
+
+  const checkDatabaseConnection = async () => {
+    try {
+      // Verificar se já temos configurações de conexão salvas
+      const dbConfig = localStorage.getItem('gearcheck-db-config');
+      
+      if (!dbConfig) {
+        setDbConnectionStatus('error');
+        setIsLoading(false);
+        return;
+      }
+
+      const { host, port, database, user } = JSON.parse(dbConfig);
+      
+      // Simular verificação de conexão
+      if (host === '172.16.5.193' && port === '5432') {
+        setDbConnectionStatus('connected');
+        loadInspections();
+      } else {
+        setDbConnectionStatus('error');
+        setIsLoading(false);
+      }
+    } catch (error) {
+      console.error('Error checking database connection:', error);
+      setDbConnectionStatus('error');
+      setIsLoading(false);
+    }
+  };
+
+  const loadInspections = async () => {
+    // Em um ambiente real, isso seria uma chamada à API para buscar dados do banco
+    try {
+      // Simular tempo de carregamento
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Carregar do localStorage como backup
+      const savedData = localStorage.getItem('gearcheck-inspections');
+      let loadedInspections = [];
+      
+      if (savedData) {
+        loadedInspections = JSON.parse(savedData);
+        setInspections(loadedInspections);
+        
+        // Extrair equipamentos e operadores únicos para filtros
+        const equipments = Array.from(new Set(loadedInspections.map((i: any) => i.equipment.id)))
+          .map((id: any) => {
+            const inspection = loadedInspections.find((i: any) => i.equipment.id === id);
+            return {
+              id: inspection.equipment.id,
+              name: inspection.equipment.name
+            };
+          });
+        
+        const operators = Array.from(new Set(loadedInspections.map((i: any) => i.operator.id)))
+          .map((id: any) => {
+            const inspection = loadedInspections.find((i: any) => i.operator.id === id);
+            return {
+              id: inspection.operator.id,
+              name: inspection.operator.name
+            };
+          });
+        
+        setUniqueEquipments(equipments);
+        setUniqueOperators(operators);
+      }
+    } catch (error) {
+      console.error('Error loading inspections:', error);
+      toast({
+        title: "Erro ao carregar inspeções",
+        description: "Não foi possível carregar as inspeções do banco de dados.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleViewDetails = (inspection: any) => {
+    setSelectedInspection(inspection);
+    setIsDialogOpen(true);
+  };
+
+  const handleExportCSV = () => {
+    // Lógica para exportar para CSV
+    toast({
+      title: "Exportação iniciada",
+      description: "Os dados das inspeções estão sendo exportados para CSV.",
+    });
+  };
+
+  const filteredInspections = inspections.filter((inspection) => {
+    let matchesEquipment = filterEquipment === "all" || inspection.equipment.id === filterEquipment;
+    let matchesOperator = filterOperator === "all" || inspection.operator.id === filterOperator;
+    return matchesEquipment && matchesOperator;
   });
 
-  // Pagination
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = filteredInspections.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(filteredInspections.length / itemsPerPage);
-
-  const nextPage = () => {
-    setCurrentPage(prev => Math.min(prev + 1, totalPages));
-  };
-
-  const prevPage = () => {
-    setCurrentPage(prev => Math.max(prev - 1, 1));
-  };
-
-  return (
-    <div>
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Histórico de Inspeções</h1>
-        <div className="mt-3 sm:mt-0">
-          <Button className="bg-red-700 hover:bg-red-800">
-            <Download size={16} className="mr-2" />
-            Exportar Relatório
-          </Button>
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="flex flex-col items-center">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-red-700 border-t-transparent"></div>
+          <p className="mt-4 text-gray-600">Carregando inspeções...</p>
         </div>
       </div>
+    );
+  }
 
-      <Card className="mb-6">
-        <CardContent className="pt-6">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-                <Input 
-                  placeholder="Buscar por equipamento ou operador" 
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <SlidersHorizontal size={18} className="text-gray-500" />
-              <span className="text-sm text-gray-500">Status:</span>
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Inspeções</h1>
+        <Button onClick={handleExportCSV} className="bg-green-600 hover:bg-green-700">
+          <Download className="mr-2 h-4 w-4" />
+          Exportar CSV
+        </Button>
+      </div>
+
+      {dbConnectionStatus === 'error' && (
+        <Alert variant="destructive">
+          <Database className="h-4 w-4" />
+          <AlertTitle>Problemas de conexão</AlertTitle>
+          <AlertDescription className="flex justify-between items-center">
+            <span>Não foi possível conectar ao banco de dados.</span>
+            <Link to="/admin/database">
+              <Button variant="outline" size="sm">
+                Configurar Conexão
+              </Button>
+            </Link>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Filtros</CardTitle>
+          <CardDescription>Filtre as inspeções por equipamento ou operador</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-medium mb-1 block">Equipamento</label>
               <Select 
-                value={statusFilter} 
-                onValueChange={setStatusFilter}
+                value={filterEquipment} 
+                onValueChange={setFilterEquipment}
               >
-                <SelectTrigger className="w-[160px]">
-                  <SelectValue placeholder="Filtrar por status" />
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos os equipamentos" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="ok">Sem problemas</SelectItem>
-                  <SelectItem value="issue">Com problemas</SelectItem>
+                  <SelectItem value="all">Todos os equipamentos</SelectItem>
+                  {uniqueEquipments.map(equipment => (
+                    <SelectItem key={equipment.id} value={equipment.id}>
+                      {equipment.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">Operador</label>
+              <Select 
+                value={filterOperator} 
+                onValueChange={setFilterOperator}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos os operadores" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os operadores</SelectItem>
+                  {uniqueOperators.map(operator => (
+                    <SelectItem key={operator.id} value={operator.id}>
+                      {operator.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -205,98 +228,155 @@ const AdminInspections = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle>Inspeções</CardTitle>
+          <CardTitle>Lista de Inspeções</CardTitle>
           <CardDescription>
-            Mostrando {indexOfFirstItem + 1}-{Math.min(indexOfLastItem, filteredInspections.length)} de {filteredInspections.length} resultados
+            {filteredInspections.length === 0 
+              ? "Nenhuma inspeção encontrada" 
+              : `Mostrando ${filteredInspections.length} inspeção(ões)`}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4">ID</th>
-                  <th className="text-left py-3 px-4">Equipamento</th>
-                  <th className="text-left py-3 px-4">Operador</th>
-                  <th className="text-left py-3 px-4">Data/Hora</th>
-                  <th className="text-left py-3 px-4">Status</th>
-                  <th className="text-right py-3 px-4">Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {currentItems.length > 0 ? (
-                  currentItems.map((inspection) => (
-                    <tr key={inspection.id} className="border-b border-gray-200 hover:bg-gray-50">
-                      <td className="py-3 px-4 font-mono text-sm">{inspection.id}</td>
-                      <td className="py-3 px-4">{inspection.equipment}</td>
-                      <td className="py-3 px-4">{inspection.operator}</td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center">
-                          <CalendarClock size={16} className="mr-1 text-gray-500" />
-                          <span>
-                            {new Date(inspection.date).toLocaleDateString('pt-BR')} às {inspection.time}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        {inspection.status === "ok" ? (
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            <CheckCircle2 size={14} className="mr-1" />
-                            OK
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                            <AlertTriangle size={14} className="mr-1" />
-                            {inspection.issues} {inspection.issues === 1 ? "Problema" : "Problemas"}
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-3 px-4 text-right">
-                        <Button variant="ghost" size="icon">
-                          <Eye size={18} />
+          {filteredInspections.length === 0 ? (
+            <div className="text-center p-8 border rounded-md bg-gray-50">
+              <p className="text-gray-500">Nenhuma inspeção encontrada com os filtros selecionados.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Data</TableHead>
+                    <TableHead>Equipamento</TableHead>
+                    <TableHead>KP</TableHead>
+                    <TableHead>Operador</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredInspections.map((inspection, index) => (
+                    <TableRow key={index}>
+                      <TableCell>
+                        {new Date(inspection.submissionDate).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>{inspection.equipment.name}</TableCell>
+                      <TableCell>{inspection.equipment.kp}</TableCell>
+                      <TableCell>{inspection.operator.name}</TableCell>
+                      <TableCell>
+                        <span className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                          Concluído
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button 
+                          onClick={() => handleViewDetails(inspection)} 
+                          variant="ghost" 
+                          size="sm"
+                        >
+                          <Eye className="h-4 w-4 mr-1" />
+                          Detalhes
                         </Button>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={6} className="py-6 text-center text-gray-500">
-                      Nenhuma inspeção encontrada
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination */}
-          <div className="flex items-center justify-between mt-4">
-            <div className="text-sm text-gray-500">
-              Página {currentPage} de {totalPages || 1}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={prevPage}
-                disabled={currentPage === 1}
-              >
-                <ChevronLeft size={16} />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={nextPage}
-                disabled={currentPage === totalPages || totalPages === 0}
-              >
-                <ChevronRight size={16} />
-              </Button>
-            </div>
-          </div>
+          )}
         </CardContent>
       </Card>
+
+      {/* Modal de detalhes */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Detalhes da Inspeção</DialogTitle>
+            <DialogDescription>
+              {selectedInspection && (
+                <div className="text-sm">
+                  Data: {new Date(selectedInspection.submissionDate).toLocaleDateString()} | 
+                  Equipamento: {selectedInspection.equipment.name} | 
+                  Operador: {selectedInspection.operator.name}
+                </div>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedInspection && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="border rounded p-3">
+                  <h3 className="font-medium text-sm mb-1">Equipamento</h3>
+                  <p className="text-sm">{selectedInspection.equipment.name}</p>
+                  <p className="text-xs text-gray-500">KP: {selectedInspection.equipment.kp}</p>
+                </div>
+                <div className="border rounded p-3">
+                  <h3 className="font-medium text-sm mb-1">Operador</h3>
+                  <p className="text-sm">{selectedInspection.operator.name}</p>
+                  <p className="text-xs text-gray-500">
+                    {selectedInspection.operator.cargo && `Cargo: ${selectedInspection.operator.cargo}`}
+                    {selectedInspection.operator.setor && ` | Setor: ${selectedInspection.operator.setor}`}
+                  </p>
+                </div>
+              </div>
+              
+              <h3 className="font-medium">Itens do Checklist</h3>
+              <div className="max-h-80 overflow-y-auto border rounded">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Item</TableHead>
+                      <TableHead className="text-right">Resposta</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {selectedInspection.checklist.map((item: any, index: number) => (
+                      <TableRow key={index}>
+                        <TableCell>{item.question}</TableCell>
+                        <TableCell className="text-right">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            item.answer === 'Sim' ? 'bg-green-100 text-green-800' : 
+                            item.answer === 'Não' ? 'bg-red-100 text-red-800' : 
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {item.answer}
+                          </span>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              
+              {selectedInspection.signature && (
+                <div>
+                  <h3 className="font-medium mb-2">Assinatura</h3>
+                  <div className="border p-2 rounded bg-gray-50">
+                    <img 
+                      src={selectedInspection.signature} 
+                      alt="Assinatura" 
+                      className="max-h-16"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+              Fechar
+            </Button>
+            <Button className="bg-red-700 hover:bg-red-800">
+              <Download className="mr-2 h-4 w-4" />
+              Exportar PDF
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
 
 export default AdminInspections;
+

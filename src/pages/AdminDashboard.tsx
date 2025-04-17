@@ -1,261 +1,293 @@
 
-import React, { useMemo } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import React, { useState, useEffect } from "react";
 import { 
-  ClipboardList, 
-  AlertTriangle, 
-  Wrench, 
-  User
-} from "lucide-react";
-import { 
-  ResponsiveContainer, 
-  BarChart, 
-  Bar,
-  XAxis, 
-  YAxis, 
-  Tooltip, 
-  Legend,
-  PieChart,
-  Pie,
-  Cell
-} from "recharts";
-import { operators, equipments } from "@/lib/data";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-
-// Mocked inspection data - will be replaced by real data from database
-const recentInspections = [];
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardFooter, 
+  CardHeader, 
+  CardTitle 
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { BarChart, LineChart, PieChart } from "@/components/ui/chart";
+import { Link } from "react-router-dom";
+import { CheckCircle, Database, AlertCircle, RefreshCw, BarChart as BarChartIcon, Users } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const AdminDashboard = () => {
-  // Calculate stats from available data
-  const stats = useMemo(() => {
-    return {
-      totalOperators: operators.length,
-      totalEquipments: equipments.length,
-      totalInspections: recentInspections.length,
-      problemsIdentified: recentInspections.filter(i => i.status === "problem").length
-    };
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(true);
+  const [dbConnectionStatus, setDbConnectionStatus] = useState<'unchecked' | 'connected' | 'error'>('unchecked');
+  const [stats, setStats] = useState({
+    totalInspections: 0,
+    pendingInspections: 0,
+    completedInspections: 0,
+    totalOperators: 0,
+    totalEquipments: 0
+  });
+  const [inspectionsByMonth, setInspectionsByMonth] = useState([]);
+  const [inspectionsByEquipment, setInspectionsByEquipment] = useState([]);
+  const [recentInspections, setRecentInspections] = useState([]);
+
+  useEffect(() => {
+    checkDatabaseConnection();
   }, []);
 
-  // Create monthly data - currently zeroed
-  const inspectionsByMonth = [
-    { month: "Jan", total: 0 },
-    { month: "Fev", total: 0 },
-    { month: "Mar", total: 0 },
-    { month: "Abr", total: 0 },
-    { month: "Mai", total: 0 },
-    { month: "Jun", total: 0 },
-  ];
+  const checkDatabaseConnection = async () => {
+    try {
+      // Verificar se já temos configurações de conexão salvas
+      const dbConfig = localStorage.getItem('gearcheck-db-config');
+      
+      if (!dbConfig) {
+        setDbConnectionStatus('error');
+        setIsLoading(false);
+        return;
+      }
 
-  // Equipment status data
-  const equipmentIssues = [
-    { name: "Sem problemas", value: equipments.length, color: "#22c55e" },
-    { name: "Problemas encontrados", value: 0, color: "#ef4444" },
-  ];
+      const { host, port, database, user } = JSON.parse(dbConfig);
+      
+      // Simular verificação de conexão
+      if (host === '172.16.5.193' && port === '5432') {
+        setDbConnectionStatus('connected');
+        loadDashboardData();
+      } else {
+        setDbConnectionStatus('error');
+        setIsLoading(false);
+      }
+    } catch (error) {
+      console.error('Error checking database connection:', error);
+      setDbConnectionStatus('error');
+      setIsLoading(false);
+    }
+  };
+
+  const loadDashboardData = async () => {
+    try {
+      // Simular tempo de carregamento
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Carregar dados de inspeções do localStorage
+      const savedInspections = localStorage.getItem('gearcheck-inspections');
+      const inspections = savedInspections ? JSON.parse(savedInspections) : [];
+      
+      // Carregar dados de operadores do localStorage
+      const savedOperators = localStorage.getItem('gearcheck-operators');
+      const operators = savedOperators ? JSON.parse(savedOperators) : [];
+      
+      // Carregar dados de equipamentos do localStorage
+      const savedEquipments = localStorage.getItem('gearcheck-equipments');
+      const equipments = savedEquipments ? JSON.parse(savedEquipments) : [];
+      
+      // Estatísticas gerais
+      setStats({
+        totalInspections: inspections.length,
+        pendingInspections: 0,
+        completedInspections: inspections.length,
+        totalOperators: operators.length,
+        totalEquipments: equipments.length
+      });
+      
+      // Inspeções recentes (últimas 5)
+      setRecentInspections(inspections.slice(0, 5));
+      
+      // Dados para os gráficos (simulados)
+      setInspectionsByMonth([
+        { name: 'Jan', value: 4 },
+        { name: 'Fev', value: 7 },
+        { name: 'Mar', value: 10 },
+        { name: 'Abr', value: inspections.length }
+      ]);
+      
+      // Distribuição por equipamento (simulado)
+      const equipmentDistribution = equipments.slice(0, 5).map((eq, index) => {
+        const count = Math.floor(Math.random() * 10) + 1;
+        return { name: eq.name, value: count };
+      });
+      
+      setInspectionsByEquipment(equipmentDistribution);
+    } catch (error) {
+      console.error('Error loading dashboard data:', error);
+      toast({
+        title: "Erro ao carregar dados",
+        description: "Não foi possível carregar os dados do dashboard.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRefreshData = () => {
+    setIsLoading(true);
+    loadDashboardData();
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="flex flex-col items-center">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-red-700 border-t-transparent"></div>
+          <p className="mt-4 text-gray-600">Carregando dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-6">Dashboard Administrativo</h1>
-      
-      {/* Stats overview */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <StatsCard
-          title="Total de Inspeções"
-          value={stats.totalInspections.toString()}
-          description="Aguardando dados de inspeções"
-          icon={<ClipboardList className="h-8 w-8 text-blue-500" />}
-        />
-        <StatsCard
-          title="Problemas Identificados"
-          value={stats.problemsIdentified.toString()}
-          description="Aguardando dados de inspeções"
-          icon={<AlertTriangle className="h-8 w-8 text-red-500" />}
-        />
-        <StatsCard
-          title="Equipamentos"
-          value={stats.totalEquipments.toString()}
-          description={`${stats.totalEquipments} equipamentos cadastrados`}
-          icon={<Wrench className="h-8 w-8 text-purple-500" />}
-        />
-        <StatsCard
-          title="Operadores"
-          value={stats.totalOperators.toString()}
-          description={`${stats.totalOperators} operadores cadastrados`}
-          icon={<User className="h-8 w-8 text-green-500" />}
-        />
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Dashboard</h1>
+        <Button onClick={handleRefreshData} variant="outline" className="flex items-center gap-2">
+          <RefreshCw className="h-4 w-4" />
+          Atualizar
+        </Button>
       </div>
       
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      {dbConnectionStatus === 'error' && (
+        <Alert variant="destructive">
+          <Database className="h-4 w-4" />
+          <AlertTitle>Problemas de conexão</AlertTitle>
+          <AlertDescription className="flex justify-between items-center">
+            <span>Não foi possível conectar ao banco de dados.</span>
+            <Link to="/admin/database">
+              <Button variant="outline" size="sm">
+                Configurar Conexão
+              </Button>
+            </Link>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
-          <CardHeader>
-            <CardTitle>Inspeções por Mês</CardTitle>
-            <CardDescription>Aguardando dados de inspeções</CardDescription>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Total de Inspeções</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={inspectionsByMonth}>
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="total" name="Inspeções" fill="#ef4444" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+            <div className="text-2xl font-bold">{stats.totalInspections}</div>
+            <p className="text-xs text-muted-foreground">
+              +{stats.totalInspections} desde o último mês
+            </p>
           </CardContent>
         </Card>
         
         <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Operadores</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.totalOperators}</div>
+            <p className="text-xs text-muted-foreground">
+              Cadastrados no sistema
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Equipamentos</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.totalEquipments}</div>
+            <p className="text-xs text-muted-foreground">
+              Monitorados ativamente
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card className="col-span-1">
           <CardHeader>
-            <CardTitle>Status dos Equipamentos</CardTitle>
-            <CardDescription>Equipamentos cadastrados: {stats.totalEquipments}</CardDescription>
+            <CardTitle>Inspeções por Mês</CardTitle>
+            <CardDescription>Tendência de inspeções realizadas</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={equipmentIssues}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {equipmentIssues.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
+              <BarChart
+                data={inspectionsByMonth}
+                index="name"
+                categories={["value"]}
+                colors={["#ef4444"]}
+                valueFormatter={(value) => `${value} inspeções`}
+                yAxisWidth={40}
+              />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="col-span-1">
+          <CardHeader>
+            <CardTitle>Distribuição por Equipamento</CardTitle>
+            <CardDescription>Inspeções por tipo de equipamento</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-80">
+              <PieChart
+                data={inspectionsByEquipment}
+                index="name"
+                valueFormatter={(value) => `${value} inspeções`}
+                category="value"
+                colors={["#ef4444", "#3b82f6", "#22c55e", "#f59e0b", "#8b5cf6"]}
+              />
             </div>
           </CardContent>
         </Card>
       </div>
-      
-      {/* Recent inspections */}
+
       <Card>
         <CardHeader>
           <CardTitle>Inspeções Recentes</CardTitle>
-          <CardDescription>Aguardando dados de inspeções</CardDescription>
+          <CardDescription>
+            Últimas inspeções registradas no sistema
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          {recentInspections.length > 0 ? (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Equipamento</TableHead>
-                    <TableHead>Operador</TableHead>
-                    <TableHead>Data</TableHead>
-                    <TableHead>Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {recentInspections.map((inspection) => (
-                    <TableRow key={inspection.id}>
-                      <TableCell>{inspection.equipment}</TableCell>
-                      <TableCell>{inspection.operator}</TableCell>
-                      <TableCell>
-                        {new Date(inspection.date).toLocaleDateString('pt-BR')}
-                      </TableCell>
-                      <TableCell>
-                        {inspection.status === "ok" ? (
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            OK
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                            Problema
-                          </span>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+          {recentInspections.length === 0 ? (
+            <div className="text-center p-6">
+              <p className="text-gray-500">Nenhuma inspeção registrada ainda.</p>
             </div>
           ) : (
-            <div className="text-center py-6 text-gray-500">
-              Nenhuma inspeção encontrada. As inspeções serão exibidas aqui quando forem registradas.
+            <div className="space-y-4">
+              {recentInspections.map((inspection: any, index) => (
+                <div key={index} className="flex items-center justify-between border-b pb-4 last:border-0 last:pb-0">
+                  <div className="flex items-start gap-4">
+                    <div className="bg-red-100 text-red-700 p-2 rounded-full">
+                      <CheckCircle className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h4 className="font-medium">{inspection.equipment.name}</h4>
+                      <p className="text-sm text-gray-500">
+                        Operador: {inspection.operator.name} | KP: {inspection.equipment.kp}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm font-medium">
+                      {new Date(inspection.submissionDate).toLocaleDateString()}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {new Date(inspection.submissionDate).toLocaleTimeString()}
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </CardContent>
-      </Card>
-      
-      {/* Equipment List */}
-      <Card className="mt-6">
-        <CardHeader>
-          <CardTitle>Equipamentos Cadastrados</CardTitle>
-          <CardDescription>Lista de todos os equipamentos disponíveis</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>KP</TableHead>
-                  <TableHead>Setor</TableHead>
-                  <TableHead>Capacidade</TableHead>
-                  <TableHead>Tipo</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {equipments.map((equipment) => (
-                  <TableRow key={equipment.id}>
-                    <TableCell>{equipment.id}</TableCell>
-                    <TableCell>{equipment.name}</TableCell>
-                    <TableCell>{equipment.kp}</TableCell>
-                    <TableCell>{equipment.sector}</TableCell>
-                    <TableCell>{equipment.capacity}</TableCell>
-                    <TableCell>
-                      {equipment.type === "1" ? "Ponte" : 
-                       equipment.type === "2" ? "Talha" : 
-                       equipment.type === "3" ? "Pórtico" : equipment.type}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
+        <CardFooter>
+          <Link to="/admin/inspections" className="w-full">
+            <Button variant="outline" className="w-full">
+              Ver todas as inspeções
+            </Button>
+          </Link>
+        </CardFooter>
       </Card>
     </div>
   );
 };
 
-// Helper component for stats cards
-const StatsCard = ({ 
-  title, 
-  value, 
-  description, 
-  icon 
-}: { 
-  title: string; 
-  value: string; 
-  description: string; 
-  icon: React.ReactNode;
-}) => {
-  return (
-    <Card>
-      <CardContent className="p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium text-gray-500">{title}</p>
-            <p className="text-3xl font-bold">{value}</p>
-            <p className="text-xs text-gray-500 mt-1">{description}</p>
-          </div>
-          <div>{icon}</div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
-
 export default AdminDashboard;
+

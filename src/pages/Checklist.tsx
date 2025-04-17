@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import { Check, X, ChevronDown, ArrowLeft } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Check, X, ChevronDown, ArrowLeft, Database, Save } from "lucide-react";
 import { 
   Select, 
   SelectContent, 
@@ -13,9 +14,12 @@ import { useToast } from "@/hooks/use-toast";
 import SignatureCanvas from "@/components/SignatureCanvas";
 import { operators as initialOperators, equipments as initialEquipments, checklistItems, ChecklistItem, Operator, Equipment } from "@/lib/data";
 import { AddOperatorDialog } from "@/components/operators/AddOperatorDialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const Checklist = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [operators, setOperators] = useState<Operator[]>([]);
   const [equipments, setEquipments] = useState<Equipment[]>([]);
   const [selectedOperator, setSelectedOperator] = useState<Operator | null>(null);
@@ -26,6 +30,15 @@ const Checklist = () => {
     new Date().toISOString().split('T')[0]
   );
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [dbConnectionStatus, setDbConnectionStatus] = useState<'unchecked' | 'connected' | 'error'>('unchecked');
+  const [savedInspections, setSavedInspections] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState('form');
+
+  // Verificar conexão com o banco de dados
+  useEffect(() => {
+    checkDatabaseConnection();
+  }, []);
 
   useEffect(() => {
     const storedOperators = localStorage.getItem('gearcheck-operators');
@@ -52,7 +65,52 @@ const Checklist = () => {
     } else {
       setEquipments(initialEquipments);
     }
+
+    // Carregar inspeções salvas do localStorage
+    const storedInspections = localStorage.getItem('gearcheck-inspections');
+    if (storedInspections) {
+      try {
+        setSavedInspections(JSON.parse(storedInspections));
+      } catch (e) {
+        console.error('Error parsing saved inspections:', e);
+        setSavedInspections([]);
+      }
+    }
   }, []);
+
+  const checkDatabaseConnection = async () => {
+    try {
+      // Verificar se já temos configurações de conexão salvas
+      const dbConfig = localStorage.getItem('gearcheck-db-config');
+      
+      if (!dbConfig) {
+        setDbConnectionStatus('error');
+        return;
+      }
+
+      const { host, port, database, user } = JSON.parse(dbConfig);
+      
+      // Simular verificação de conexão
+      if (host === '172.16.5.193' && port === '5432') {
+        setDbConnectionStatus('connected');
+        await loadSavedInspections();
+      } else {
+        setDbConnectionStatus('error');
+      }
+    } catch (error) {
+      console.error('Error checking database connection:', error);
+      setDbConnectionStatus('error');
+    }
+  };
+
+  const loadSavedInspections = async () => {
+    // Em um ambiente real, isso seria uma chamada à API para buscar dados do banco
+    // Vamos simular isso carregando dados do localStorage
+    const savedData = localStorage.getItem('gearcheck-inspections');
+    if (savedData) {
+      setSavedInspections(JSON.parse(savedData));
+    }
+  };
 
   const handleOperatorSelect = (operatorId: string) => {
     const operator = operators.find(op => op.id === operatorId) || null;
@@ -94,7 +152,7 @@ const Checklist = () => {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!selectedOperator) {
@@ -134,26 +192,58 @@ const Checklist = () => {
       return;
     }
 
-    const formData = {
-      operator: selectedOperator,
-      equipment: selectedEquipment,
-      checklist,
-      signature,
-      inspectionDate,
-      submissionDate: new Date().toISOString(),
-    };
+    setIsSaving(true);
 
-    console.log("Formulário enviado:", formData);
-    
-    toast({
-      title: "Checklist enviado com sucesso!",
-      description: `Inspeção do equipamento ${selectedEquipment.name} registrada`,
-      variant: "default",
-    });
+    try {
+      const formData = {
+        id: Date.now().toString(),
+        operator: selectedOperator,
+        equipment: selectedEquipment,
+        checklist,
+        signature,
+        inspectionDate,
+        submissionDate: new Date().toISOString(),
+      };
 
-    setSelectedEquipment(null);
-    setChecklist(checklistItems.map(item => ({ ...item, answer: null })));
-    setSignature(null);
+      // Salvar no localStorage como backup
+      const existingInspections = JSON.parse(localStorage.getItem('gearcheck-inspections') || '[]');
+      const updatedInspections = [formData, ...existingInspections];
+      localStorage.setItem('gearcheck-inspections', JSON.stringify(updatedInspections));
+      setSavedInspections(updatedInspections);
+
+      // Simular envio para o banco de dados
+      if (dbConnectionStatus === 'connected') {
+        // Aqui seria a integração real com o banco de dados
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Simular tempo de processamento
+      }
+
+      toast({
+        title: "Checklist enviado com sucesso!",
+        description: `Inspeção do equipamento ${selectedEquipment.name} registrada`,
+        variant: "default",
+      });
+
+      // Limpar o formulário
+      setChecklist(checklistItems.map(item => ({ ...item, answer: null })));
+      setSignature(null);
+      setSelectedEquipment(null);
+      
+      // Mudar para a aba de inspeções salvas
+      setActiveTab('saved');
+    } catch (error) {
+      console.error('Error saving inspection:', error);
+      toast({
+        title: "Erro ao salvar",
+        description: "Ocorreu um erro ao salvar a inspeção. Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDatabaseConfig = () => {
+    navigate('/database');
   };
 
   const getEquipmentTypeText = (type: string) => {
@@ -183,143 +273,224 @@ const Checklist = () => {
         </div>
       </header>
 
-      <div className="flex-1 overflow-auto p-4 max-w-3xl mx-auto w-full">
-        <form onSubmit={handleSubmit}>
-          <div className="mb-6">
-            <div className="w-full">
-              <Select onValueChange={handleOperatorSelect}>
-                <SelectTrigger className="w-full bg-white h-10">
-                  <SelectValue placeholder="Selecione um operador" />
-                </SelectTrigger>
-                <SelectContent>
-                  {operators.map(operator => (
-                    <SelectItem key={operator.id} value={operator.id}>
-                      {operator.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            {selectedOperator && (
-              <div className="mt-3 grid grid-cols-1 gap-3">
-                <div className="flex flex-col p-3 bg-blue-50 rounded-md border border-blue-200">
-                  <span className="text-sm text-blue-700 font-semibold">Cargo:</span>
-                  <span className="text-sm">{selectedOperator.cargo || "Não informado"}</span>
-                </div>
-                <div className="flex flex-col p-3 bg-blue-50 rounded-md border border-blue-200">
-                  <span className="text-sm text-blue-700 font-semibold">Setor:</span>
-                  <span className="text-sm">{selectedOperator.setor || "Não informado"}</span>
-                </div>
+      {dbConnectionStatus === 'error' && (
+        <Alert variant="destructive" className="mx-4 mt-4">
+          <Database className="h-4 w-4" />
+          <AlertTitle>Problemas de conexão</AlertTitle>
+          <AlertDescription className="flex justify-between items-center">
+            <span>Não foi possível conectar ao banco de dados.</span>
+            <Button onClick={handleDatabaseConfig} variant="outline" size="sm">
+              Configurar Conexão
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 p-4 max-w-3xl mx-auto w-full">
+        <TabsList className="grid grid-cols-2 mb-4">
+          <TabsTrigger value="form">Novo Checklist</TabsTrigger>
+          <TabsTrigger value="saved">Inspeções Salvas</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="form" className="flex-1 overflow-auto">
+          <form onSubmit={handleSubmit}>
+            <div className="mb-6">
+              <div className="w-full">
+                <Select onValueChange={handleOperatorSelect}>
+                  <SelectTrigger className="w-full bg-white h-10">
+                    <SelectValue placeholder="Selecione um operador" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {operators.map(operator => (
+                      <SelectItem key={operator.id} value={operator.id}>
+                        {operator.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-            )}
-          </div>
-
-          <div className="mb-4 grid grid-cols-1 gap-4">
-            <div className="w-full">
-              <Select onValueChange={handleEquipmentSelect}>
-                <SelectTrigger className="w-full bg-white">
-                  <SelectValue placeholder="Selecione o equipamento" />
-                </SelectTrigger>
-                <SelectContent>
-                  {equipments.map(equipment => (
-                    <SelectItem key={equipment.id} value={equipment.id}>
-                      {equipment.name} (KP: {equipment.kp})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {selectedEquipment && (
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex flex-col">
-                  <span className="text-sm text-gray-500 mb-1">KP</span>
-                  <input 
-                    type="text" 
-                    value={selectedEquipment.kp} 
-                    className="px-4 py-2 border border-gray-300 rounded bg-gray-100" 
-                    readOnly 
-                  />
-                </div>
-
-                <div className="flex flex-col">
-                  <span className="text-sm text-gray-500 mb-1">Tipo</span>
-                  <input 
-                    type="text" 
-                    value={getEquipmentTypeText(selectedEquipment.type)} 
-                    className="px-4 py-2 border border-gray-300 rounded bg-gray-100" 
-                    readOnly 
-                  />
-                </div>
-
-                <div className="flex flex-col">
-                  <span className="text-sm text-gray-500 mb-1">Setor</span>
-                  <input 
-                    type="text" 
-                    value={selectedEquipment.sector} 
-                    className="px-4 py-2 border border-gray-300 rounded bg-gray-100" 
-                    readOnly 
-                  />
-                </div>
-
-                <div className="flex flex-col">
-                  <span className="text-sm text-gray-500 mb-1">Capacidade</span>
-                  <input 
-                    type="text" 
-                    value={selectedEquipment.capacity} 
-                    className="px-4 py-2 border border-gray-300 rounded bg-gray-100" 
-                    readOnly 
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="mt-6 space-y-4">
-            {checklist.map(item => (
-              <div key={item.id} className="p-3 bg-white rounded-md shadow-sm border border-gray-200">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <div className="text-sm sm:text-base font-medium flex-grow">
-                    {item.question}
+              
+              {selectedOperator && (
+                <div className="mt-3 grid grid-cols-1 gap-3">
+                  <div className="flex flex-col p-3 bg-blue-50 rounded-md border border-blue-200">
+                    <span className="text-sm text-blue-700 font-semibold">Cargo:</span>
+                    <span className="text-sm">{selectedOperator.cargo || "Não informado"}</span>
                   </div>
-                  <div className="w-full sm:w-36">
-                    <Select
-                      onValueChange={(value) => 
-                        handleChecklistChange(item.id, value as "Sim" | "Não" | "N/A" | "Selecione")
-                      }
-                      value={item.answer || "Selecione"}
-                    >
-                      <SelectTrigger className="w-full bg-white">
-                        <SelectValue placeholder="Selecione" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Selecione">Selecione</SelectItem>
-                        <SelectItem value="Sim">Sim</SelectItem>
-                        <SelectItem value="Não">Não</SelectItem>
-                        <SelectItem value="N/A">N/A</SelectItem>
-                      </SelectContent>
-                    </Select>
+                  <div className="flex flex-col p-3 bg-blue-50 rounded-md border border-blue-200">
+                    <span className="text-sm text-blue-700 font-semibold">Setor:</span>
+                    <span className="text-sm">{selectedOperator.setor || "Não informado"}</span>
                   </div>
                 </div>
+              )}
+            </div>
+
+            <div className="mb-4 grid grid-cols-1 gap-4">
+              <div className="w-full">
+                <Select onValueChange={handleEquipmentSelect}>
+                  <SelectTrigger className="w-full bg-white">
+                    <SelectValue placeholder="Selecione o equipamento" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {equipments.map(equipment => (
+                      <SelectItem key={equipment.id} value={equipment.id}>
+                        {equipment.name} (KP: {equipment.kp})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-            ))}
-          </div>
 
-          <div className="mt-6 bg-white p-4 rounded-md shadow-sm border border-gray-200">
-            <SignatureCanvas onSignatureChange={setSignature} />
-          </div>
+              {selectedEquipment && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex flex-col">
+                    <span className="text-sm text-gray-500 mb-1">KP</span>
+                    <input 
+                      type="text" 
+                      value={selectedEquipment.kp} 
+                      className="px-4 py-2 border border-gray-300 rounded bg-gray-100" 
+                      readOnly 
+                    />
+                  </div>
 
-          <div className="mt-6 mb-10 flex justify-center">
+                  <div className="flex flex-col">
+                    <span className="text-sm text-gray-500 mb-1">Tipo</span>
+                    <input 
+                      type="text" 
+                      value={getEquipmentTypeText(selectedEquipment.type)} 
+                      className="px-4 py-2 border border-gray-300 rounded bg-gray-100" 
+                      readOnly 
+                    />
+                  </div>
+
+                  <div className="flex flex-col">
+                    <span className="text-sm text-gray-500 mb-1">Setor</span>
+                    <input 
+                      type="text" 
+                      value={selectedEquipment.sector} 
+                      className="px-4 py-2 border border-gray-300 rounded bg-gray-100" 
+                      readOnly 
+                    />
+                  </div>
+
+                  <div className="flex flex-col">
+                    <span className="text-sm text-gray-500 mb-1">Capacidade</span>
+                    <input 
+                      type="text" 
+                      value={selectedEquipment.capacity} 
+                      className="px-4 py-2 border border-gray-300 rounded bg-gray-100" 
+                      readOnly 
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-6 space-y-4">
+              {checklist.map(item => (
+                <div key={item.id} className="p-3 bg-white rounded-md shadow-sm border border-gray-200">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div className="text-sm sm:text-base font-medium flex-grow">
+                      {item.question}
+                    </div>
+                    <div className="w-full sm:w-36">
+                      <Select
+                        onValueChange={(value) => 
+                          handleChecklistChange(item.id, value as "Sim" | "Não" | "N/A" | "Selecione")
+                        }
+                        value={item.answer || "Selecione"}
+                      >
+                        <SelectTrigger className="w-full bg-white">
+                          <SelectValue placeholder="Selecione" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Selecione">Selecione</SelectItem>
+                          <SelectItem value="Sim">Sim</SelectItem>
+                          <SelectItem value="Não">Não</SelectItem>
+                          <SelectItem value="N/A">N/A</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-6 bg-white p-4 rounded-md shadow-sm border border-gray-200">
+              <SignatureCanvas onSignatureChange={setSignature} />
+            </div>
+
+            <div className="mt-6 mb-10 flex justify-center">
+              <Button 
+                type="submit"
+                className="bg-red-700 hover:bg-red-800 text-white w-full max-w-xs py-6 text-lg"
+                disabled={isSaving}
+              >
+                {isSaving ? (
+                  <span className="flex items-center gap-2">
+                    <span className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    Salvando...
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-2">
+                    <Save size={20} />
+                    Enviar Inspeção
+                  </span>
+                )}
+              </Button>
+            </div>
+          </form>
+        </TabsContent>
+
+        <TabsContent value="saved" className="space-y-4">
+          {savedInspections.length === 0 ? (
+            <div className="text-center p-8 border rounded-md bg-gray-50">
+              <p className="text-gray-500">Nenhuma inspeção salva ainda.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <h2 className="text-lg font-semibold">Inspeções Salvas ({savedInspections.length})</h2>
+              {savedInspections.map((inspection: any, index) => (
+                <div key={index} className="border rounded-md p-4 bg-white shadow-sm">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h3 className="font-medium">{inspection.equipment.name}</h3>
+                      <p className="text-sm text-gray-500">KP: {inspection.equipment.kp}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-semibold">{new Date(inspection.submissionDate).toLocaleDateString()}</p>
+                      <p className="text-sm text-gray-500">Operador: {inspection.operator.name}</p>
+                    </div>
+                  </div>
+                  <div className="mt-2 flex justify-end">
+                    <Button variant="outline" size="sm" className="text-xs">
+                      Visualizar Detalhes
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          
+          <div className="mt-4 flex justify-between">
             <Button 
-              type="submit"
-              className="bg-red-700 hover:bg-red-800 text-white w-full max-w-xs py-6 text-lg"
+              variant="outline" 
+              onClick={() => setActiveTab('form')}
+              className="border-red-700 text-red-700 hover:bg-red-50"
             >
-              Enviar Inspeção
+              Nova Inspeção
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              onClick={() => navigate('/admin')}
+              className="flex items-center gap-1"
+            >
+              <Settings size={16} />
+              Ir para o Dashboard
             </Button>
           </div>
-        </form>
-      </div>
+        </TabsContent>
+      </Tabs>
 
       <AddOperatorDialog 
         open={dialogOpen}
@@ -331,3 +502,4 @@ const Checklist = () => {
 };
 
 export default Checklist;
+

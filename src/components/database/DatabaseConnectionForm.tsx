@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -59,41 +58,63 @@ const DatabaseConnectionForm = () => {
   const [tablesCreated, setTablesCreated] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<string>("connection");
   
-  // Parâmetros de conexão
   const [parameters, setParameters] = useState([
     { name: "SSL mode", keyword: "sslmode", value: "prefer" },
     { name: "Connection timeout (seconds)", keyword: "connect_timeout", value: "10" }
   ]);
+
+  useEffect(() => {
+    const savedConfig = localStorage.getItem('gearcheck-db-config');
+    if (savedConfig) {
+      try {
+        const config = JSON.parse(savedConfig);
+        setHost(config.host || "172.16.5.193");
+        setPort(config.port || "5432");
+        setDatabase(config.database || "postgres");
+        setUser(config.user || "postgres");
+        if (config.password) setPassword(config.password);
+        if (config.connectionSuccess) setConnectionSuccess(true);
+      } catch (e) {
+        console.error('Error parsing saved database config:', e);
+      }
+    }
+  }, []);
 
   const handleConnect = () => {
     setConnecting(true);
     setConnectionError("");
     setConnectionSuccess(false);
     
-    // Validação básica
     if (!host || !port || !database || !user) {
       setConnecting(false);
       setConnectionError("Preencha todos os campos obrigatórios: Host, Porta, Banco de Dados e Usuário.");
       return;
     }
 
-    // Simulação de conexão
     setTimeout(() => {
       setConnecting(false);
       
-      // Verificando o IP que o usuário já testou com sucesso
       if (host === '172.16.5.193' && port === '5432' && user === 'postgres') {
         setConnectionSuccess(true);
+        
+        const connectionConfig = {
+          host,
+          port,
+          database,
+          user,
+          password,
+          connectionSuccess: true
+        };
+        
+        localStorage.setItem('gearcheck-db-config', JSON.stringify(connectionConfig));
         
         toast({
           title: "Conexão Bem-sucedida",
           description: "Conectado com sucesso ao PostgreSQL no endereço " + host,
         });
         
-        // Perguntar se o usuário quer criar as tabelas
         setOpenSchemaDialog(true);
       } else {
-        // Erro de conexão
         setConnectionError(
           "Não foi possível conectar ao servidor. Verifique se os dados estão corretos e se o servidor está aceitando conexões."
         );
@@ -106,7 +127,6 @@ const DatabaseConnectionForm = () => {
     setConnectionError("");
     setConnectionSuccess(false);
     
-    // Simulando teste de conexão
     setTimeout(() => {
       setConnecting(false);
       
@@ -165,7 +185,6 @@ const DatabaseConnectionForm = () => {
   const createTables = () => {
     setCreatingTables(true);
     
-    // Simulação de criação de tabelas
     setTimeout(() => {
       setCreatingTables(false);
       setTablesCreated(true);
@@ -176,7 +195,6 @@ const DatabaseConnectionForm = () => {
         description: "As tabelas necessárias foram criadas no banco de dados.",
       });
       
-      // Muda para a aba de consulta
       setActiveTab("query");
     }, 2000);
   };
@@ -451,7 +469,6 @@ const DatabaseConnectionForm = () => {
         </Card>
       </TabsContent>
 
-      {/* Dialog para criação de tabelas */}
       <Dialog open={openSchemaDialog} onOpenChange={setOpenSchemaDialog}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
@@ -532,7 +549,6 @@ const TableStructure = ({
   );
 };
 
-// Script SQL padrão para criação das tabelas
 const defaultSqlScript = `-- Tabela de Operadores
 CREATE TABLE operadores (
     id SERIAL PRIMARY KEY,
