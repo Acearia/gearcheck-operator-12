@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Check, X, ChevronDown, ArrowLeft, Database, Save } from "lucide-react";
+import { Check, X, ChevronDown, ArrowLeft, Database, Save, Settings } from "lucide-react";
 import { 
   Select, 
   SelectContent, 
@@ -35,7 +34,6 @@ const Checklist = () => {
   const [savedInspections, setSavedInspections] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState('form');
 
-  // Verificar conexão com o banco de dados
   useEffect(() => {
     checkDatabaseConnection();
   }, []);
@@ -66,7 +64,6 @@ const Checklist = () => {
       setEquipments(initialEquipments);
     }
 
-    // Carregar inspeções salvas do localStorage
     const storedInspections = localStorage.getItem('gearcheck-inspections');
     if (storedInspections) {
       try {
@@ -80,7 +77,6 @@ const Checklist = () => {
 
   const checkDatabaseConnection = async () => {
     try {
-      // Verificar se já temos configurações de conexão salvas
       const dbConfig = localStorage.getItem('gearcheck-db-config');
       
       if (!dbConfig) {
@@ -90,7 +86,6 @@ const Checklist = () => {
 
       const { host, port, database, user } = JSON.parse(dbConfig);
       
-      // Simular verificação de conexão
       if (host === '172.16.5.193' && port === '5432') {
         setDbConnectionStatus('connected');
         await loadSavedInspections();
@@ -104,8 +99,6 @@ const Checklist = () => {
   };
 
   const loadSavedInspections = async () => {
-    // Em um ambiente real, isso seria uma chamada à API para buscar dados do banco
-    // Vamos simular isso carregando dados do localStorage
     const savedData = localStorage.getItem('gearcheck-inspections');
     if (savedData) {
       setSavedInspections(JSON.parse(savedData));
@@ -205,16 +198,13 @@ const Checklist = () => {
         submissionDate: new Date().toISOString(),
       };
 
-      // Salvar no localStorage como backup
       const existingInspections = JSON.parse(localStorage.getItem('gearcheck-inspections') || '[]');
       const updatedInspections = [formData, ...existingInspections];
       localStorage.setItem('gearcheck-inspections', JSON.stringify(updatedInspections));
       setSavedInspections(updatedInspections);
 
-      // Simular envio para o banco de dados
       if (dbConnectionStatus === 'connected') {
-        // Aqui seria a integração real com o banco de dados
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Simular tempo de processamento
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
 
       toast({
@@ -223,12 +213,10 @@ const Checklist = () => {
         variant: "default",
       });
 
-      // Limpar o formulário
       setChecklist(checklistItems.map(item => ({ ...item, answer: null })));
       setSignature(null);
       setSelectedEquipment(null);
       
-      // Mudar para a aba de inspeções salvas
       setActiveTab('saved');
     } catch (error) {
       console.error('Error saving inspection:', error);
@@ -502,4 +490,3 @@ const Checklist = () => {
 };
 
 export default Checklist;
-

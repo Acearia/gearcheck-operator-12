@@ -2,14 +2,151 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CalendarIcon, Download, FileSpreadsheet, FilePieChart, FileBarChart } from "lucide-react";
+import { CalendarIcon, Download, FileSpreadsheet, FilePdf } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useToast } from "@/hooks/use-toast";
+import jsPDF from "jspdf";
 
 const AdminReports = () => {
   const [date, setDate] = React.useState<Date | undefined>(new Date());
+  const { toast } = useToast();
+
+  const generateInspectionPDF = () => {
+    try {
+      const doc = new jsPDF();
+      
+      // Cabeçalho
+      doc.setFontSize(20);
+      doc.text("Relatório de Inspeções", 20, 20);
+      
+      doc.setFontSize(12);
+      doc.text(`Data do relatório: ${date ? format(date, "PP", { locale: ptBR }) : "Não selecionada"}`, 20, 30);
+      
+      // Buscar dados do localStorage
+      const savedInspections = localStorage.getItem('gearcheck-inspections');
+      const inspections = savedInspections ? JSON.parse(savedInspections) : [];
+      
+      // Adicionar dados ao PDF
+      doc.setFontSize(14);
+      doc.text("Lista de Inspeções", 20, 45);
+      
+      let yPosition = 55;
+      
+      inspections.forEach((inspection: any, index: number) => {
+        if (yPosition > 250) {
+          doc.addPage();
+          yPosition = 20;
+        }
+        
+        doc.setFontSize(12);
+        doc.text(`${index + 1}. Equipamento: ${inspection.equipment.name}`, 20, yPosition);
+        doc.text(`   Operador: ${inspection.operator.name}`, 30, yPosition + 7);
+        doc.text(`   Data: ${new Date(inspection.submissionDate).toLocaleDateString()}`, 30, yPosition + 14);
+        
+        yPosition += 25;
+      });
+      
+      // Salvar o PDF
+      doc.save(`relatorio-inspecoes-${format(new Date(), "dd-MM-yyyy")}.pdf`);
+      
+      toast({
+        title: "PDF gerado com sucesso",
+        description: "O relatório foi baixado para o seu computador",
+      });
+    } catch (error) {
+      console.error('Erro ao gerar PDF:', error);
+      toast({
+        title: "Erro ao gerar PDF",
+        description: "Não foi possível gerar o relatório",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const generateProblemsPDF = () => {
+    try {
+      const doc = new jsPDF();
+      
+      // Cabeçalho
+      doc.setFontSize(20);
+      doc.text("Relatório de Problemas", 20, 20);
+      
+      doc.setFontSize(12);
+      doc.text(`Data do relatório: ${format(new Date(), "PP", { locale: ptBR })}`, 20, 30);
+      
+      // Buscar dados do localStorage
+      const savedInspections = localStorage.getItem('gearcheck-inspections');
+      const inspections = savedInspections ? JSON.parse(savedInspections) : [];
+      
+      let problems: any[] = [];
+      
+      // Coletar problemas de todas as inspeções
+      inspections.forEach((inspection: any) => {
+        const inspectionProblems = inspection.checklist
+          .filter((item: any) => item.answer === "Não")
+          .map((item: any) => ({
+            equipment: inspection.equipment.name,
+            date: new Date(inspection.submissionDate).toLocaleDateString(),
+            problem: item.question
+          }));
+        
+        problems = [...problems, ...inspectionProblems];
+      });
+      
+      // Adicionar problemas ao PDF
+      doc.setFontSize(14);
+      doc.text("Problemas Identificados", 20, 45);
+      
+      let yPosition = 55;
+      
+      problems.forEach((problem, index) => {
+        if (yPosition > 250) {
+          doc.addPage();
+          yPosition = 20;
+        }
+        
+        doc.setFontSize(12);
+        doc.text(`${index + 1}. Equipamento: ${problem.equipment}`, 20, yPosition);
+        doc.text(`   Problema: ${problem.problem}`, 30, yPosition + 7);
+        doc.text(`   Data: ${problem.date}`, 30, yPosition + 14);
+        
+        yPosition += 25;
+      });
+      
+      // Salvar o PDF
+      doc.save(`relatorio-problemas-${format(new Date(), "dd-MM-yyyy")}.pdf`);
+      
+      toast({
+        title: "PDF gerado com sucesso",
+        description: "O relatório foi baixado para o seu computador",
+      });
+    } catch (error) {
+      console.error('Erro ao gerar PDF:', error);
+      toast({
+        title: "Erro ao gerar PDF",
+        description: "Não foi possível gerar o relatório",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const downloadSavedReport = (reportName: string) => {
+    // Simular download de relatório salvo
+    const doc = new jsPDF();
+    doc.setFontSize(20);
+    doc.text(reportName, 20, 20);
+    doc.setFontSize(12);
+    doc.text("Este é um relatório previamente gerado.", 20, 30);
+    doc.save(`${reportName.toLowerCase().replace(/ /g, "-")}.pdf`);
+    
+    toast({
+      title: "Relatório baixado",
+      description: "O relatório salvo foi baixado com sucesso",
+    });
+  };
 
   return (
     <div>
@@ -41,9 +178,12 @@ const AdminReports = () => {
                   />
                 </PopoverContent>
               </Popover>
-              <Button className="flex-1 sm:flex-none bg-red-700 hover:bg-red-800">
-                <FileSpreadsheet className="mr-2 h-4 w-4" />
-                Exportar Excel
+              <Button 
+                className="flex-1 sm:flex-none bg-red-700 hover:bg-red-800"
+                onClick={generateInspectionPDF}
+              >
+                <FilePdf className="mr-2 h-4 w-4" />
+                Exportar PDF
               </Button>
             </div>
           </CardContent>
@@ -58,8 +198,11 @@ const AdminReports = () => {
               Exporta detalhes de todos os problemas encontrados durante as inspeções, agrupados por equipamento e tipo de problema.
             </p>
             <div className="flex justify-end">
-              <Button className="bg-red-700 hover:bg-red-800">
-                <FileBarChart className="mr-2 h-4 w-4" />
+              <Button 
+                className="bg-red-700 hover:bg-red-800"
+                onClick={generateProblemsPDF}
+              >
+                <FilePdf className="mr-2 h-4 w-4" />
                 Gerar Relatório
               </Button>
             </div>
@@ -88,7 +231,11 @@ const AdminReports = () => {
                   <td className="py-3 px-4">Relatório consolidado de todas as inspeções de março</td>
                   <td className="py-3 px-4">03/04/2025</td>
                   <td className="py-3 px-4 text-center">
-                    <Button variant="outline" size="sm">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => downloadSavedReport("Inspeções Mensais - Março 2025")}
+                    >
                       <Download className="mr-2 h-4 w-4" />
                       Baixar
                     </Button>
@@ -99,7 +246,11 @@ const AdminReports = () => {
                   <td className="py-3 px-4">Análise de problemas por equipamento no 1º trimestre</td>
                   <td className="py-3 px-4">01/04/2025</td>
                   <td className="py-3 px-4 text-center">
-                    <Button variant="outline" size="sm">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => downloadSavedReport("Problemas por Equipamento - Q1 2025")}
+                    >
                       <Download className="mr-2 h-4 w-4" />
                       Baixar
                     </Button>
@@ -110,7 +261,11 @@ const AdminReports = () => {
                   <td className="py-3 px-4">Relatório completo de todas as inspeções de 2024</td>
                   <td className="py-3 px-4">15/01/2025</td>
                   <td className="py-3 px-4 text-center">
-                    <Button variant="outline" size="sm">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => downloadSavedReport("Relatório Anual 2024")}
+                    >
                       <Download className="mr-2 h-4 w-4" />
                       Baixar
                     </Button>
