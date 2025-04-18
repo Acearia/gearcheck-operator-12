@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link } from "react-router-dom";
 import { ClipboardCheck, Settings, Briefcase } from "lucide-react";
@@ -78,21 +77,15 @@ const Index = () => {
                   <p className="text-gray-600 mb-6">Acesse as funções administrativas do sistema</p>
                 </div>
                 
-                <div className="grid gap-4">
-                  <Link to="/admin/login">
-                    <Button variant="outline" className="w-full py-4 text-base flex justify-between items-center">
-                      <span>Login Administrativo</span>
-                      <Settings size={20} />
-                    </Button>
-                  </Link>
-                  
-                  <Link to="/admin/database">
-                    <Button variant="outline" className="w-full py-4 text-base flex justify-between items-center">
-                      <span>Configuração do Banco de Dados</span>
-                      <Settings size={20} />
-                    </Button>
-                  </Link>
-                </div>
+                <Link to="/admin/login">
+                  <Button 
+                    variant="outline" 
+                    className="w-full py-4 text-base flex justify-between items-center"
+                  >
+                    <span>Login Administrativo</span>
+                    <Settings size={20} />
+                  </Button>
+                </Link>
               </CardContent>
             </Card>
           </TabsContent>
