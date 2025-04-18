@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Index from "./pages/Index";
 import Checklist from "./pages/Checklist";
 import NotFound from "./pages/NotFound";
@@ -45,6 +45,9 @@ const App = () => (
             <Route path="settings" element={<AdminSettings />} />
             <Route path="database" element={<DatabaseConnection />} />
           </Route>
+          
+          {/* Redirect old database route to the correct path */}
+          <Route path="/database" element={<Navigate to="/admin/database" replace />} />
           
           {/* Catch-all route */}
           <Route path="*" element={<NotFound />} />
