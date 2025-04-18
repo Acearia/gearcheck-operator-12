@@ -482,7 +482,7 @@ const LeaderDashboard = () => {
         <TabsContent value="inspections">
           <Card>
             <CardHeader>
-              <CardTitle>Últimas Inspeções</Title>
+              <CardTitle>Últimas Inspeções</CardTitle>
               <CardDescription>
                 {inspections.length === 0 
                   ? "Nenhuma inspeção registrada" 
