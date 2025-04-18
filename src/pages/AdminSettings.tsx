@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,7 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Save, KeyRound, Bell, Database, Shield, Server, AlertCircle } from "lucide-react";
+import { Save, KeyRound, Bell, Database, Shield, Server, AlertCircle, Briefcase } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Link } from "react-router-dom";
 
@@ -23,6 +22,23 @@ const AdminSettings = () => {
   const [proxmoxOpen, setProxmoxOpen] = useState(false);
   const [testDbConnection, setTestDbConnection] = useState(false);
   const [dbConnectionResult, setDbConnectionResult] = useState("");
+  const [leaderSectors, setLeaderSectors] = useState({
+    'acabamento@example.com': {
+      sector: 'Acabamento',
+      password: '123456'
+    },
+    'usinagem@example.com': {
+      sector: 'Usinagem',
+      password: '123456'
+    },
+    'montagem@example.com': {
+      sector: 'Montagem',
+      password: '123456'
+    }
+  });
+  const [newLeaderEmail, setNewLeaderEmail] = useState('');
+  const [newLeaderSector, setNewLeaderSector] = useState('');
+  const [newLeaderPassword, setNewLeaderPassword] = useState('');
 
   const handleSavePassword = (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,6 +94,47 @@ const AdminSettings = () => {
     }, 2000);
   };
 
+  const handleAddLeader = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!newLeaderEmail || !newLeaderSector || !newLeaderPassword) {
+      toast({
+        title: "Erro",
+        description: "Todos os campos são obrigatórios",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLeaderSectors(prev => ({
+      ...prev,
+      [newLeaderEmail]: {
+        sector: newLeaderSector,
+        password: newLeaderPassword
+      }
+    }));
+
+    setNewLeaderEmail('');
+    setNewLeaderSector('');
+    setNewLeaderPassword('');
+
+    toast({
+      title: "Líder Adicionado",
+      description: "Novo líder de setor foi adicionado com sucesso",
+    });
+  };
+
+  const handleRemoveLeader = (email: string) => {
+    const newLeaders = { ...leaderSectors };
+    delete newLeaders[email];
+    setLeaderSectors(newLeaders);
+
+    toast({
+      title: "Líder Removido",
+      description: "Líder de setor foi removido com sucesso",
+    });
+  };
+
   return (
     <div>
       <h1 className="text-2xl font-bold mb-6">Configurações</h1>
@@ -99,6 +156,10 @@ const AdminSettings = () => {
           <TabsTrigger value="security" className="flex items-center">
             <Shield className="mr-2 h-4 w-4" />
             Segurança
+          </TabsTrigger>
+          <TabsTrigger value="leaders" className="flex items-center">
+            <Briefcase className="mr-2 h-4 w-4" />
+            Líderes
           </TabsTrigger>
         </TabsList>
         
@@ -411,6 +472,76 @@ const AdminSettings = () => {
             </CardFooter>
           </Card>
         </TabsContent>
+        
+        <TabsContent value="leaders">
+          <Card>
+            <CardHeader>
+              <CardTitle>Gerenciar Líderes de Setor</CardTitle>
+              <CardDescription>
+                Adicione ou remova acesso dos líderes de setor
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Líderes Cadastrados</h3>
+                {Object.entries(leaderSectors).map(([email, data]) => (
+                  <div key={email} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div>
+                      <p className="font-medium">{email}</p>
+                      <p className="text-sm text-gray-500">Setor: {data.sector}</p>
+                    </div>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleRemoveLeader(email)}
+                    >
+                      Remover
+                    </Button>
+                  </div>
+                ))}
+              </div>
+
+              <Separator />
+
+              <form onSubmit={handleAddLeader} className="space-y-4">
+                <h3 className="text-lg font-medium">Adicionar Novo Líder</h3>
+                <div className="space-y-2">
+                  <Label htmlFor="leader-email">Email do Setor</Label>
+                  <Input
+                    id="leader-email"
+                    type="email"
+                    placeholder="setor@exemplo.com"
+                    value={newLeaderEmail}
+                    onChange={(e) => setNewLeaderEmail(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="leader-sector">Nome do Setor</Label>
+                  <Input
+                    id="leader-sector"
+                    type="text"
+                    placeholder="Ex: Acabamento"
+                    value={newLeaderSector}
+                    onChange={(e) => setNewLeaderSector(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="leader-password">Senha</Label>
+                  <Input
+                    id="leader-password"
+                    type="password"
+                    value={newLeaderPassword}
+                    onChange={(e) => setNewLeaderPassword(e.target.value)}
+                  />
+                </div>
+                <Button type="submit" className="w-full">
+                  Adicionar Líder
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
       </Tabs>
     </div>
   );
