@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link } from "react-router-dom";
 import { ClipboardCheck, Settings, Briefcase } from "lucide-react";
@@ -85,7 +86,7 @@ const Index = () => {
                     </Button>
                   </Link>
                   
-                  <Link to="/database">
+                  <Link to="/admin/database">
                     <Button variant="outline" className="w-full py-4 text-base flex justify-between items-center">
                       <span>Configuração do Banco de Dados</span>
                       <Settings size={20} />
