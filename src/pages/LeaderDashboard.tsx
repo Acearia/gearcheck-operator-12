@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -24,12 +25,11 @@ import { Link } from "react-router-dom";
 import { 
   AlertCircle, 
   CheckCircle, 
-  Filter, 
-  RefreshCw,
   LogOut,
   Wrench, 
   Database, 
-  User 
+  Download,
+  FilePdf 
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { 
@@ -39,6 +39,9 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
+import jsPDF from "jspdf";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 const LeaderDashboard = () => {
   const navigate = useNavigate();
@@ -58,6 +61,7 @@ const LeaderDashboard = () => {
   const [operators, setOperators] = useState<{id: string, name: string}[]>([]);
   const [problemsList, setProblemsList] = useState<any[]>([]);
   const [inspections, setInspections] = useState<any[]>([]);
+  const [equipmentList, setEquipmentList] = useState<any[]>([]);
 
   useEffect(() => {
     const isAuthenticated = localStorage.getItem("gearcheck-leader-auth");
@@ -111,10 +115,28 @@ const LeaderDashboard = () => {
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       const savedInspections = localStorage.getItem('gearcheck-inspections');
+      const storedEquipments = localStorage.getItem('gearcheck-equipments');
+      
       const inspections = savedInspections ? JSON.parse(savedInspections) : [];
+      const equipments = storedEquipments ? JSON.parse(storedEquipments) : [];
+      
+      setEquipmentList(equipments);
+      
+      // Get unique sectors from equipment
+      const uniqueSectors = Array.from(new Set(equipments.map(e => e.sector)));
+      setSectors(uniqueSectors);
+      
+      // Filter inspections for the leader's sector if a sector filter is applied
+      const sectorEquipmentIds = sectorFilter !== "all" 
+        ? equipments.filter(e => e.sector === sectorFilter).map(e => e.id) 
+        : equipments.map(e => e.id);
+      
+      const sectorInspections = inspections.filter(i => 
+        sectorEquipmentIds.includes(i.equipment.id)
+      );
       
       const problems = [];
-      inspections.forEach(inspection => {
+      sectorInspections.forEach(inspection => {
         inspection.checklist.forEach(item => {
           if (item.answer === 'Não') {
             problems.push({
@@ -124,7 +146,7 @@ const LeaderDashboard = () => {
               operator: inspection.operator,
               problem: item.question,
               status: 'Pendente',
-              sector: inspection.operator.setor || 'Não especificado'
+              sector: inspection.equipment.sector || 'Não especificado'
             });
           }
         });
@@ -132,12 +154,9 @@ const LeaderDashboard = () => {
       
       setProblemsList(problems);
       
-      const uniqueSectors = Array.from(new Set(problems.map(p => p.sector)));
-      setSectors(uniqueSectors);
-      
-      const uniqueOperators = Array.from(new Set(inspections.map(i => i.operator.id)))
+      const uniqueOperators = Array.from(new Set(sectorInspections.map(i => i.operator.id)))
         .map(id => {
-          const inspection = inspections.find(i => i.operator.id === id);
+          const inspection = sectorInspections.find(i => i.operator.id === id);
           return {
             id: inspection.operator.id,
             name: inspection.operator.name
@@ -161,10 +180,10 @@ const LeaderDashboard = () => {
       }
       
       setProblemsByEquipment(problemsByEquip);
-      setInspections(inspections);
+      setInspections(sectorInspections);
       
       setStats({
-        totalInspections: inspections.length,
+        totalInspections: sectorInspections.length,
         problemInspections: problems.length > 0 ? new Set(problems.map(p => `${p.equipment.id}-${p.date}`)).size : 0,
         pendingActions: problems.length
       });
@@ -190,7 +209,6 @@ const LeaderDashboard = () => {
   };
 
   const filteredProblems = problemsList.filter(problem => {
-    let matchesSector = sectorFilter === "all" || problem.sector === sectorFilter;
     let matchesOperator = operatorFilter === "all" || problem.operator.id === operatorFilter;
     
     const problemDate = new Date(problem.date);
@@ -209,7 +227,7 @@ const LeaderDashboard = () => {
       matchesTimeRange = problemDate >= monthAgo;
     }
     
-    return matchesSector && matchesOperator && matchesTimeRange;
+    return matchesOperator && matchesTimeRange;
   });
 
   const getTimeRangeLabel = () => {
@@ -222,6 +240,67 @@ const LeaderDashboard = () => {
         return "Últimos 30 dias";
       default:
         return "Todos os períodos";
+    }
+  };
+
+  const exportReportToPDF = () => {
+    try {
+      const doc = new jsPDF();
+      
+      // Cabeçalho
+      doc.setFontSize(20);
+      doc.text("Relatório de Inspeções do Setor", 20, 20);
+      
+      doc.setFontSize(12);
+      doc.text(`Setor: ${sectorFilter === 'all' ? 'Todos os setores' : sectorFilter}`, 20, 30);
+      doc.text(`Data do relatório: ${format(new Date(), "PP", { locale: ptBR })}`, 20, 38);
+      
+      // Estatísticas
+      doc.setFontSize(14);
+      doc.text("Estatísticas", 20, 50);
+      doc.setFontSize(12);
+      doc.text(`Total de inspeções: ${stats.totalInspections}`, 30, 60);
+      doc.text(`Inspeções com problemas: ${stats.problemInspections}`, 30, 68);
+      doc.text(`Total de problemas: ${stats.pendingActions}`, 30, 76);
+      
+      // Problemas
+      if (problemsList.length > 0) {
+        doc.setFontSize(14);
+        doc.text("Problemas Identificados", 20, 90);
+        
+        let yPosition = 100;
+        const pageHeight = doc.internal.pageSize.height;
+        
+        filteredProblems.forEach((problem, index) => {
+          if (yPosition > pageHeight - 30) {
+            doc.addPage();
+            yPosition = 20;
+          }
+          
+          doc.setFontSize(12);
+          doc.text(`${index + 1}. Equipamento: ${problem.equipment.name} (${problem.equipment.kp})`, 20, yPosition);
+          doc.text(`   Problema: ${problem.problem}`, 30, yPosition + 8);
+          doc.text(`   Operador: ${problem.operator.name}`, 30, yPosition + 16);
+          doc.text(`   Data: ${new Date(problem.date).toLocaleDateString()}`, 30, yPosition + 24);
+          
+          yPosition += 34;
+        });
+      }
+      
+      // Salvar o PDF
+      doc.save(`relatorio-setor-${sectorFilter}-${format(new Date(), "dd-MM-yyyy")}.pdf`);
+      
+      toast({
+        title: "PDF gerado com sucesso",
+        description: "O relatório foi baixado para o seu computador",
+      });
+    } catch (error) {
+      console.error('Erro ao gerar PDF:', error);
+      toast({
+        title: "Erro ao gerar PDF",
+        description: "Não foi possível gerar o relatório",
+        variant: "destructive",
+      });
     }
   };
 
@@ -241,11 +320,19 @@ const LeaderDashboard = () => {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold">Dashboard de Líderes</h1>
-          <p className="text-gray-600">Setor: {sectorFilter}</p>
+          <p className="text-gray-600">Setor: {sectorFilter === 'all' ? 'Todos os setores' : sectorFilter}</p>
         </div>
         <div className="flex gap-2">
+          <Button 
+            onClick={exportReportToPDF} 
+            variant="outline" 
+            className="flex items-center gap-2"
+          >
+            <FilePdf className="h-4 w-4" />
+            Exportar PDF
+          </Button>
           <Button onClick={handleRefreshData} variant="outline" className="flex items-center gap-2">
-            <RefreshCw className="h-4 w-4" />
+            <span className="h-4 w-4" />
             Atualizar
           </Button>
           <Button 
@@ -323,29 +410,10 @@ const LeaderDashboard = () => {
       <Card>
         <CardHeader>
           <CardTitle>Filtros</CardTitle>
-          <CardDescription>Filtre os problemas por setor, operador ou período</CardDescription>
+          <CardDescription>Filtre os problemas por operador ou período</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="text-sm font-medium mb-1 block">Setor</label>
-              <Select 
-                value={sectorFilter} 
-                onValueChange={setSectorFilter}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Todos os setores" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os setores</SelectItem>
-                  {sectors.map(sector => (
-                    <SelectItem key={sector} value={sector}>
-                      {sector}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-medium mb-1 block">Operador</label>
               <Select 
@@ -425,7 +493,6 @@ const LeaderDashboard = () => {
                         <TableHead>Data</TableHead>
                         <TableHead>Equipamento</TableHead>
                         <TableHead>Operador</TableHead>
-                        <TableHead>Setor</TableHead>
                         <TableHead>Problema</TableHead>
                         <TableHead>Status</TableHead>
                       </TableRow>
@@ -441,7 +508,6 @@ const LeaderDashboard = () => {
                             <div className="text-xs text-gray-500">KP: {problem.equipment.kp}</div>
                           </TableCell>
                           <TableCell>{problem.operator.name}</TableCell>
-                          <TableCell>{problem.sector}</TableCell>
                           <TableCell>{problem.problem}</TableCell>
                           <TableCell>
                             <span className="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
@@ -465,16 +531,22 @@ const LeaderDashboard = () => {
               <CardDescription>Distribuição de problemas identificados por equipamento</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-80">
-                <BarChart
-                  data={problemsByEquipment}
-                  index="name"
-                  categories={["value"]}
-                  colors={["#ef4444"]}
-                  valueFormatter={(value) => `${value} problema(s)`}
-                  yAxisWidth={40}
-                />
-              </div>
+              {problemsByEquipment.length === 0 ? (
+                <div className="text-center p-8 border rounded-md bg-gray-50 h-80 flex items-center justify-center">
+                  <p className="text-gray-500">Nenhum problema encontrado para gerar o gráfico.</p>
+                </div>
+              ) : (
+                <div className="h-80">
+                  <BarChart
+                    data={problemsByEquipment}
+                    index="name"
+                    categories={["value"]}
+                    colors={["#ef4444"]}
+                    valueFormatter={(value) => `${value} problema(s)`}
+                    yAxisWidth={40}
+                  />
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -539,11 +611,10 @@ const LeaderDashboard = () => {
               )}
             </CardContent>
             <CardFooter>
-              <Link to="/admin/inspections" className="w-full">
-                <Button variant="outline" className="w-full">
-                  Ver todas as inspeções
-                </Button>
-              </Link>
+              <Button variant="outline" className="w-full" onClick={exportReportToPDF}>
+                <Download className="mr-2 h-4 w-4" />
+                Exportar Relatório Completo
+              </Button>
             </CardFooter>
           </Card>
         </TabsContent>
