@@ -1,34 +1,13 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CalendarIcon, Download, FileSpreadsheet } from "lucide-react";
+import { CalendarIcon, Download, FileSpreadsheet, FileText } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 import jsPDF from "jspdf";
-
-const FilePdf = (props) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    {...props}
-  >
-    <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
-    <polyline points="14 2 14 8 20 8" />
-    <path d="M10 12a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-1a1 1 0 0 0-1-1h-1Z" />
-    <path d="M14 13v3" />
-    <path d="M8 13v3" />
-  </svg>
-);
 
 const AdminReports = () => {
   const [date, setDate] = React.useState<Date | undefined>(new Date());
@@ -202,7 +181,7 @@ const AdminReports = () => {
                 className="flex-1 sm:flex-none bg-red-700 hover:bg-red-800"
                 onClick={generateInspectionPDF}
               >
-                <FilePdf className="mr-2 h-4 w-4" />
+                <FileText className="mr-2 h-4 w-4" />
                 Exportar PDF
               </Button>
             </div>
@@ -222,7 +201,7 @@ const AdminReports = () => {
                 className="bg-red-700 hover:bg-red-800"
                 onClick={generateProblemsPDF}
               >
-                <FilePdf className="mr-2 h-4 w-4" />
+                <FileText className="mr-2 h-4 w-4" />
                 Gerar Relatório
               </Button>
             </div>

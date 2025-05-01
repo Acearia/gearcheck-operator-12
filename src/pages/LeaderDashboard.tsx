@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -29,7 +28,7 @@ import {
   Wrench, 
   Database, 
   Download,
-  FilePdf 
+  FileText
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { 
@@ -124,7 +123,7 @@ const LeaderDashboard = () => {
       
       // Get unique sectors from equipment
       const uniqueSectors = Array.from(new Set(equipments.map(e => e.sector)));
-      setSectors(uniqueSectors);
+      setSectors(uniqueSectors as string[]);
       
       // Filter inspections for the leader's sector if a sector filter is applied
       const sectorEquipmentIds = sectorFilter !== "all" 
@@ -328,7 +327,7 @@ const LeaderDashboard = () => {
             variant="outline" 
             className="flex items-center gap-2"
           >
-            <FilePdf className="h-4 w-4" />
+            <FileText className="h-4 w-4" />
             Exportar PDF
           </Button>
           <Button onClick={handleRefreshData} variant="outline" className="flex items-center gap-2">

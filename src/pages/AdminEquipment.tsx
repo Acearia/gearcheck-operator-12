@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Download, FilePdf } from "lucide-react";
+import { PlusCircle, Download, FileText } from "lucide-react";
 import { equipments as initialEquipments, Equipment } from "@/lib/data";
 import { AddEquipmentDialog } from "@/components/equipment/AddEquipmentDialog";
 import { useToast } from "@/hooks/use-toast";
@@ -138,7 +138,7 @@ const AdminEquipment = () => {
             onClick={exportToPDF}
             className="flex items-center gap-2"
           >
-            <FilePdf size={16} />
+            <FileText size={16} />
             Exportar PDF
           </Button>
           <Button 
