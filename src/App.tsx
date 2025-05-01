@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -17,6 +18,7 @@ import AdminReports from "./pages/AdminReports";
 import AdminSettings from "./pages/AdminSettings";
 import DatabaseConnection from "./pages/DatabaseConnection";
 import LeaderDashboard from "./pages/LeaderDashboard";
+import AdminLeaderDashboard from "./pages/AdminLeaderDashboard";
 
 const queryClient = new QueryClient();
 
@@ -40,6 +42,7 @@ const App = () => (
             <Route path="inspections" element={<AdminInspections />} />
             <Route path="operators" element={<AdminOperators />} />
             <Route path="equipment" element={<AdminEquipment />} />
+            <Route path="leaders" element={<AdminLeaderDashboard />} />
             <Route path="reports" element={<AdminReports />} />
             <Route path="settings" element={<AdminSettings />} />
             <Route path="database" element={<DatabaseConnection />} />

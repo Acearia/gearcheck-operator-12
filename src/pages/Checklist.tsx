@@ -208,13 +208,32 @@ const Checklist = () => {
         signature,
         inspectionDate,
         submissionDate: new Date().toISOString(),
-        photos, // Include photos in the form data
-        comments, // Include comments in the form data
+        photos,
+        comments
       };
 
       const existingInspections = JSON.parse(localStorage.getItem('gearcheck-inspections') || '[]');
       const updatedInspections = [formData, ...existingInspections];
       localStorage.setItem('gearcheck-inspections', JSON.stringify(updatedInspections));
+
+      // Check if there's a leader for this equipment's sector
+      try {
+        const savedLeaders = localStorage.getItem('gearcheck-leaders');
+        if (savedLeaders) {
+          const leaders = JSON.parse(savedLeaders);
+          const sectorLeaders = leaders.filter(leader => leader.sector === selectedEquipment.sector);
+          
+          if (sectorLeaders.length > 0) {
+            // If we have leaders for this sector, simulate sending email notification
+            toast({
+              title: "Notificação enviada",
+              description: `${sectorLeaders.length} líder(es) do setor ${selectedEquipment.sector} foram notificados`,
+            });
+          }
+        }
+      } catch (error) {
+        console.error("Error processing leader notifications:", error);
+      }
 
       if (dbConnectionStatus === 'connected') {
         await new Promise(resolve => setTimeout(resolve, 1000));
@@ -231,7 +250,7 @@ const Checklist = () => {
       setSelectedEquipment(null);
       setPhotos([]);
       setComments('');
-      
+
       // Navigate to leader dashboard if the operator has a sector set
       if (selectedOperator.setor) {
         navigate('/leader');

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -28,7 +29,8 @@ import {
   Wrench, 
   Database, 
   Download,
-  FileText
+  FileText,
+  Mail
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { 
@@ -41,6 +43,15 @@ import {
 import jsPDF from "jspdf";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+
+interface Leader {
+  id: string;
+  name: string;
+  email: string;
+  sector: string;
+  assignedOperators: string[];
+  assignedEquipments: string[];
+}
 
 const LeaderDashboard = () => {
   const navigate = useNavigate();
@@ -61,10 +72,12 @@ const LeaderDashboard = () => {
   const [problemsList, setProblemsList] = useState<any[]>([]);
   const [inspections, setInspections] = useState<any[]>([]);
   const [equipmentList, setEquipmentList] = useState<any[]>([]);
+  const [currentLeader, setCurrentLeader] = useState<Leader | null>(null);
+  const [emailNotificationEnabled, setEmailNotificationEnabled] = useState(false);
 
   useEffect(() => {
     const isAuthenticated = localStorage.getItem("gearcheck-leader-auth");
-    const leaderSector = localStorage.getItem("gearcheck-leader-sector");
+    const leaderId = localStorage.getItem("gearcheck-leader-id");
     
     if (!isAuthenticated) {
       toast({
@@ -76,8 +89,26 @@ const LeaderDashboard = () => {
       return;
     }
     
-    if (leaderSector) {
-      setSectorFilter(leaderSector);
+    // Load leader data
+    if (leaderId) {
+      const savedLeaders = localStorage.getItem('gearcheck-leaders');
+      if (savedLeaders) {
+        const leaders = JSON.parse(savedLeaders);
+        const leader = leaders.find(l => l.id === leaderId);
+        if (leader) {
+          setCurrentLeader(leader);
+          setSectorFilter(leader.sector);
+          setEmailNotificationEnabled(true);
+        } else {
+          toast({
+            title: "Erro ao carregar dados",
+            description: "Informações do líder não foram encontradas",
+            variant: "destructive",
+          });
+          navigate("/leader/login");
+          return;
+        }
+      }
     }
     
     checkDatabaseConnection();
@@ -115,9 +146,11 @@ const LeaderDashboard = () => {
       
       const savedInspections = localStorage.getItem('gearcheck-inspections');
       const storedEquipments = localStorage.getItem('gearcheck-equipments');
+      const storedOperators = localStorage.getItem('gearcheck-operators');
       
       const inspections = savedInspections ? JSON.parse(savedInspections) : [];
       const equipments = storedEquipments ? JSON.parse(storedEquipments) : [];
+      const operators = storedOperators ? JSON.parse(storedOperators) : [];
       
       setEquipmentList(equipments);
       
@@ -125,17 +158,38 @@ const LeaderDashboard = () => {
       const uniqueSectors = Array.from(new Set(equipments.map(e => e.sector)));
       setSectors(uniqueSectors as string[]);
       
-      // Filter inspections for the leader's sector if a sector filter is applied
-      const sectorEquipmentIds = sectorFilter !== "all" 
-        ? equipments.filter(e => e.sector === sectorFilter).map(e => e.id) 
-        : equipments.map(e => e.id);
+      // Filter inspections based on leader's assigned equipment
+      let filteredInspections = [...inspections];
       
-      const sectorInspections = inspections.filter(i => 
-        sectorEquipmentIds.includes(i.equipment.id)
-      );
+      if (currentLeader) {
+        // If we have a leader, filter by assigned equipment
+        if (currentLeader.assignedEquipments && currentLeader.assignedEquipments.length > 0) {
+          filteredInspections = inspections.filter(i => 
+            currentLeader.assignedEquipments.includes(i.equipment.id)
+          );
+        } else {
+          // Fallback to filter by sector
+          const sectorEquipmentIds = equipments
+            .filter(e => e.sector === currentLeader.sector)
+            .map(e => e.id);
+          
+          filteredInspections = inspections.filter(i => 
+            sectorEquipmentIds.includes(i.equipment.id)
+          );
+        }
+      } else if (sectorFilter !== "all") {
+        // If no leader but sector filter is applied
+        const sectorEquipmentIds = equipments
+          .filter(e => e.sector === sectorFilter)
+          .map(e => e.id);
+        
+        filteredInspections = inspections.filter(i => 
+          sectorEquipmentIds.includes(i.equipment.id)
+        );
+      }
       
       const problems = [];
-      sectorInspections.forEach(inspection => {
+      filteredInspections.forEach(inspection => {
         inspection.checklist.forEach(item => {
           if (item.answer === 'Não') {
             problems.push({
@@ -153,16 +207,37 @@ const LeaderDashboard = () => {
       
       setProblemsList(problems);
       
-      const uniqueOperators = Array.from(new Set(sectorInspections.map(i => i.operator.id)))
-        .map(id => {
-          const inspection = sectorInspections.find(i => i.operator.id === id);
-          return {
-            id: inspection.operator.id,
-            name: inspection.operator.name
-          };
-        });
-      setOperators(uniqueOperators);
+      // Get operators from inspections
+      const leaderOperators = [];
       
+      if (currentLeader && currentLeader.assignedOperators && currentLeader.assignedOperators.length > 0) {
+        // Filter only assigned operators
+        currentLeader.assignedOperators.forEach(opId => {
+          const operator = operators.find(o => o.id === opId);
+          if (operator) {
+            leaderOperators.push({
+              id: operator.id,
+              name: operator.name
+            });
+          }
+        });
+      } else {
+        // Get all operators for this sector
+        const uniqueOperatorIds = Array.from(new Set(filteredInspections.map(i => i.operator.id)));
+        uniqueOperatorIds.forEach(id => {
+          const inspection = filteredInspections.find(i => i.operator.id === id);
+          if (inspection) {
+            leaderOperators.push({
+              id: inspection.operator.id,
+              name: inspection.operator.name
+            });
+          }
+        });
+      }
+      
+      setOperators(leaderOperators);
+      
+      // Problems by equipment stats
       const problemsByEquip = [];
       const equipmentCounts = {};
       
@@ -179,10 +254,10 @@ const LeaderDashboard = () => {
       }
       
       setProblemsByEquipment(problemsByEquip);
-      setInspections(sectorInspections);
+      setInspections(filteredInspections);
       
       setStats({
-        totalInspections: sectorInspections.length,
+        totalInspections: filteredInspections.length,
         problemInspections: problems.length > 0 ? new Set(problems.map(p => `${p.equipment.id}-${p.date}`)).size : 0,
         pendingActions: problems.length
       });
@@ -204,6 +279,23 @@ const LeaderDashboard = () => {
     toast({
       title: "Dados atualizados",
       description: "Os dados do dashboard foram atualizados.",
+    });
+  };
+  
+  const handleSendEmailNotification = () => {
+    if (!currentLeader) {
+      toast({
+        title: "Erro ao enviar email",
+        description: "Não foi possível identificar o líder atual",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Simulate email sending
+    toast({
+      title: "Email enviado",
+      description: `Relatório enviado para ${currentLeader.email}`,
     });
   };
 
@@ -254,20 +346,26 @@ const LeaderDashboard = () => {
       doc.text(`Setor: ${sectorFilter === 'all' ? 'Todos os setores' : sectorFilter}`, 20, 30);
       doc.text(`Data do relatório: ${format(new Date(), "PP", { locale: ptBR })}`, 20, 38);
       
+      // Adicionar informações do líder, se disponível
+      if (currentLeader) {
+        doc.text(`Líder: ${currentLeader.name}`, 20, 46);
+        doc.text(`Email: ${currentLeader.email}`, 20, 54);
+      }
+      
       // Estatísticas
       doc.setFontSize(14);
-      doc.text("Estatísticas", 20, 50);
+      doc.text("Estatísticas", 20, 64);
       doc.setFontSize(12);
-      doc.text(`Total de inspeções: ${stats.totalInspections}`, 30, 60);
-      doc.text(`Inspeções com problemas: ${stats.problemInspections}`, 30, 68);
-      doc.text(`Total de problemas: ${stats.pendingActions}`, 30, 76);
+      doc.text(`Total de inspeções: ${stats.totalInspections}`, 30, 74);
+      doc.text(`Inspeções com problemas: ${stats.problemInspections}`, 30, 82);
+      doc.text(`Total de problemas: ${stats.pendingActions}`, 30, 90);
       
       // Problemas
       if (problemsList.length > 0) {
         doc.setFontSize(14);
-        doc.text("Problemas Identificados", 20, 90);
+        doc.text("Problemas Identificados", 20, 104);
         
-        let yPosition = 100;
+        let yPosition = 114;
         const pageHeight = doc.internal.pageSize.height;
         
         filteredProblems.forEach((problem, index) => {
@@ -319,9 +417,21 @@ const LeaderDashboard = () => {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold">Dashboard de Líderes</h1>
-          <p className="text-gray-600">Setor: {sectorFilter === 'all' ? 'Todos os setores' : sectorFilter}</p>
+          <p className="text-gray-600">
+            {currentLeader ? `${currentLeader.name} - ${currentLeader.sector}` : (sectorFilter === 'all' ? 'Todos os setores' : sectorFilter)}
+          </p>
         </div>
         <div className="flex gap-2">
+          {emailNotificationEnabled && (
+            <Button 
+              onClick={handleSendEmailNotification} 
+              variant="outline" 
+              className="flex items-center gap-2"
+            >
+              <Mail className="h-4 w-4" />
+              Receber por Email
+            </Button>
+          )}
           <Button 
             onClick={exportReportToPDF} 
             variant="outline" 
@@ -337,6 +447,7 @@ const LeaderDashboard = () => {
           <Button 
             onClick={() => {
               localStorage.removeItem("gearcheck-leader-auth");
+              localStorage.removeItem("gearcheck-leader-id");
               localStorage.removeItem("gearcheck-leader-sector");
               navigate("/leader/login");
             }} 

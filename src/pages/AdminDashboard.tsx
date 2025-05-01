@@ -25,7 +25,8 @@ const AdminDashboard = () => {
     pendingInspections: 0,
     completedInspections: 0,
     totalOperators: 0,
-    totalEquipments: 0
+    totalEquipments: 0,
+    totalLeaders: 0
   });
   const [inspectionsByMonth, setInspectionsByMonth] = useState([]);
   const [inspectionsByEquipment, setInspectionsByEquipment] = useState([]);
@@ -37,7 +38,6 @@ const AdminDashboard = () => {
 
   const checkDatabaseConnection = async () => {
     try {
-      // Verificar se já temos configurações de conexão salvas
       const dbConfig = localStorage.getItem('gearcheck-db-config');
       
       if (!dbConfig) {
@@ -48,7 +48,6 @@ const AdminDashboard = () => {
 
       const { host, port, database, user } = JSON.parse(dbConfig);
       
-      // Simular verificação de conexão
       if (host === '172.16.5.193' && port === '5432') {
         setDbConnectionStatus('connected');
         loadDashboardData();
@@ -80,33 +79,74 @@ const AdminDashboard = () => {
       const savedEquipments = localStorage.getItem('gearcheck-equipments');
       const equipments = savedEquipments ? JSON.parse(savedEquipments) : [];
       
+      // Carregar dados de líderes do localStorage
+      const savedLeaders = localStorage.getItem('gearcheck-leaders');
+      const leaders = savedLeaders ? JSON.parse(savedLeaders) : [];
+      
       // Estatísticas gerais
       setStats({
         totalInspections: inspections.length,
         pendingInspections: 0,
         completedInspections: inspections.length,
         totalOperators: operators.length,
-        totalEquipments: equipments.length
+        totalEquipments: equipments.length,
+        totalLeaders: leaders.length
       });
       
       // Inspeções recentes (últimas 5)
       setRecentInspections(inspections.slice(0, 5));
       
       // Dados para os gráficos (simulados)
-      setInspectionsByMonth([
-        { name: 'Jan', value: 4 },
-        { name: 'Fev', value: 7 },
-        { name: 'Mar', value: 10 },
-        { name: 'Abr', value: inspections.length }
-      ]);
+      // Get actual inspection counts by month
+      const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+      const currentDate = new Date();
+      const currentMonth = currentDate.getMonth();
       
-      // Distribuição por equipamento (simulado)
-      const equipmentDistribution = equipments.slice(0, 5).map((eq, index) => {
-        const count = Math.floor(Math.random() * 10) + 1;
-        return { name: eq.name, value: count };
+      const lastFourMonthsData = [];
+      
+      for (let i = 3; i >= 0; i--) {
+        const monthIndex = (currentMonth - i + 12) % 12;
+        const monthName = months[monthIndex];
+        
+        // Count inspections for this month
+        const monthStart = new Date(currentDate.getFullYear(), currentMonth - i, 1);
+        const monthEnd = new Date(currentDate.getFullYear(), currentMonth - i + 1, 0);
+        
+        const count = inspections.filter(inspection => {
+          const inspDate = new Date(inspection.submissionDate);
+          return inspDate >= monthStart && inspDate <= monthEnd;
+        }).length;
+        
+        lastFourMonthsData.push({
+          name: monthName,
+          value: count
+        });
+      }
+      
+      setInspectionsByMonth(lastFourMonthsData);
+      
+      // Distribution by equipment (using actual data)
+      const equipmentCounts = {};
+      
+      inspections.forEach(inspection => {
+        const equipmentName = inspection.equipment.name;
+        if (!equipmentCounts[equipmentName]) {
+          equipmentCounts[equipmentName] = 0;
+        }
+        equipmentCounts[equipmentName]++;
       });
       
-      setInspectionsByEquipment(equipmentDistribution);
+      const equipmentDistribution = [];
+      for (const [name, value] of Object.entries(equipmentCounts)) {
+        equipmentDistribution.push({ name, value });
+      }
+      
+      // Take only top 5 equipment by inspection count
+      const topEquipments = equipmentDistribution
+        .sort((a: any, b: any) => b.value - a.value)
+        .slice(0, 5);
+      
+      setInspectionsByEquipment(topEquipments);
     } catch (error) {
       console.error('Error loading dashboard data:', error);
       toast({
@@ -122,6 +162,10 @@ const AdminDashboard = () => {
   const handleRefreshData = () => {
     setIsLoading(true);
     loadDashboardData();
+    toast({
+      title: "Dados atualizados",
+      description: "Os dados do dashboard foram atualizados com sucesso.",
+    });
   };
 
   if (isLoading) {
@@ -139,10 +183,18 @@ const AdminDashboard = () => {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Dashboard</h1>
-        <Button onClick={handleRefreshData} variant="outline" className="flex items-center gap-2">
-          <RefreshCw className="h-4 w-4" />
-          Atualizar
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={handleRefreshData} variant="outline" className="flex items-center gap-2">
+            <RefreshCw className="h-4 w-4" />
+            Atualizar
+          </Button>
+          <Link to="/admin/leaders">
+            <Button variant="outline" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Gerenciar Líderes
+            </Button>
+          </Link>
+        </div>
       </div>
       
       {dbConnectionStatus === 'error' && (
@@ -160,7 +212,7 @@ const AdminDashboard = () => {
         </Alert>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Total de Inspeções</CardTitle>
@@ -168,7 +220,7 @@ const AdminDashboard = () => {
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalInspections}</div>
             <p className="text-xs text-muted-foreground">
-              +{stats.totalInspections} desde o último mês
+              Realizadas no sistema
             </p>
           </CardContent>
         </Card>
@@ -193,6 +245,18 @@ const AdminDashboard = () => {
             <div className="text-2xl font-bold">{stats.totalEquipments}</div>
             <p className="text-xs text-muted-foreground">
               Monitorados ativamente
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Líderes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.totalLeaders}</div>
+            <p className="text-xs text-muted-foreground">
+              Gerenciando setores
             </p>
           </CardContent>
         </Card>
@@ -225,13 +289,19 @@ const AdminDashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="h-80">
-              <PieChart
-                data={inspectionsByEquipment}
-                index="name"
-                valueFormatter={(value) => `${value} inspeções`}
-                category="value"
-                colors={["#ef4444", "#3b82f6", "#22c55e", "#f59e0b", "#8b5cf6"]}
-              />
+              {inspectionsByEquipment.length === 0 ? (
+                <div className="flex items-center justify-center h-full">
+                  <p className="text-gray-500">Nenhuma inspeção registrada</p>
+                </div>
+              ) : (
+                <PieChart
+                  data={inspectionsByEquipment}
+                  index="name"
+                  valueFormatter={(value) => `${value} inspeções`}
+                  category="value"
+                  colors={["#ef4444", "#3b82f6", "#22c55e", "#f59e0b", "#8b5cf6"]}
+                />
+              )}
             </div>
           </CardContent>
         </Card>
@@ -290,4 +360,3 @@ const AdminDashboard = () => {
 };
 
 export default AdminDashboard;
-
