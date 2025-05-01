@@ -2,33 +2,76 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Download, FileText } from "lucide-react";
+import { PlusCircle, Download, FileText, Search, RefreshCw } from "lucide-react";
 import { equipments as initialEquipments, Equipment } from "@/lib/data";
 import { AddEquipmentDialog } from "@/components/equipment/AddEquipmentDialog";
 import { useToast } from "@/hooks/use-toast";
 import jsPDF from "jspdf";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { Input } from "@/components/ui/input";
 
 const AdminEquipment = () => {
   const [equipments, setEquipments] = useState<Equipment[]>([]);
+  const [displayedEquipments, setDisplayedEquipments] = useState<Equipment[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   const { toast } = useToast();
   
   // Load equipments from localStorage on component mount
-  useEffect(() => {
+  const loadEquipments = () => {
     const storedEquipments = localStorage.getItem('gearcheck-equipments');
     if (storedEquipments) {
       try {
-        setEquipments(JSON.parse(storedEquipments));
+        const parsedEquipments = JSON.parse(storedEquipments);
+        setEquipments(parsedEquipments);
+        setDisplayedEquipments(parsedEquipments);
       } catch (e) {
         console.error('Error parsing equipments from localStorage:', e);
+        localStorage.setItem('gearcheck-equipments', JSON.stringify(initialEquipments));
         setEquipments(initialEquipments);
+        setDisplayedEquipments(initialEquipments);
       }
     } else {
+      localStorage.setItem('gearcheck-equipments', JSON.stringify(initialEquipments));
       setEquipments(initialEquipments);
+      setDisplayedEquipments(initialEquipments);
     }
+  };
+
+  useEffect(() => {
+    loadEquipments();
   }, []);
+
+  // Filter equipments based on search term
+  useEffect(() => {
+    if (searchTerm.trim() === '') {
+      setDisplayedEquipments(equipments);
+      setCurrentPage(1);
+    } else {
+      const filtered = equipments.filter(eq => 
+        eq.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        eq.kp.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        eq.sector.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        eq.capacity.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      setDisplayedEquipments(filtered);
+      setCurrentPage(1);
+    }
+  }, [searchTerm, equipments]);
+  
+  // Reset equipment data to original
+  const resetToOriginalData = () => {
+    localStorage.setItem('gearcheck-equipments', JSON.stringify(initialEquipments));
+    setEquipments(initialEquipments);
+    setDisplayedEquipments(initialEquipments);
+    toast({
+      title: "Dados restaurados",
+      description: "Os dados originais dos equipamentos foram restaurados com sucesso.",
+    });
+  };
   
   // Calculate the next available ID
   const getNextId = () => {
@@ -128,11 +171,26 @@ const AdminEquipment = () => {
     }
   };
 
+  // Pagination
+  const totalPages = Math.ceil(displayedEquipments.length / itemsPerPage);
+  const paginatedEquipments = displayedEquipments.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Gerenciar Equipamentos</h1>
         <div className="flex gap-2">
+          <Button 
+            variant="outline"
+            onClick={resetToOriginalData}
+            className="flex items-center gap-2"
+          >
+            <RefreshCw size={16} />
+            Restaurar Dados
+          </Button>
           <Button 
             variant="outline"
             onClick={exportToPDF}
@@ -151,17 +209,30 @@ const AdminEquipment = () => {
         </div>
       </div>
 
+      <div className="mb-6">
+        <div className="relative">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+          <Input
+            type="search"
+            placeholder="Buscar equipamento por nome, KP, setor ou capacidade..."
+            className="pl-8"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+      </div>
+
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Lista de Equipamentos</CardTitle>
           <div className="text-sm text-muted-foreground">
-            Total: {equipments.length} equipamento(s)
+            Total: {displayedEquipments.length} equipamento(s)
           </div>
         </CardHeader>
         <CardContent>
-          {equipments.length === 0 ? (
+          {displayedEquipments.length === 0 ? (
             <div className="text-center p-8 border rounded-md bg-gray-50">
-              <p className="text-gray-500">Nenhum equipamento cadastrado. Adicione equipamentos usando o botão acima.</p>
+              <p className="text-gray-500">Nenhum equipamento encontrado. Ajuste os termos da busca ou adicione equipamentos usando o botão acima.</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -177,7 +248,7 @@ const AdminEquipment = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {equipments.map((equipment) => (
+                  {paginatedEquipments.map((equipment) => (
                     <tr key={equipment.id} className="border-b border-gray-200 hover:bg-gray-50">
                       <td className="py-3 px-4">{equipment.kp}</td>
                       <td className="py-3 px-4">{equipment.name}</td>
@@ -207,6 +278,35 @@ const AdminEquipment = () => {
               </table>
             </div>
           )}
+          
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center space-x-2 mt-6">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+              >
+                Anterior
+              </Button>
+              <span className="text-sm text-gray-600">
+                Página {currentPage} de {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+              >
+                Próxima
+              </Button>
+            </div>
+          )}
+          
+          <div className="mt-4 text-center text-sm text-gray-500">
+            Mostrando {paginatedEquipments.length} de {displayedEquipments.length} equipamentos
+          </div>
         </CardContent>
       </Card>
 

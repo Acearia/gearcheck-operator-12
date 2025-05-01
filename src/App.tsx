@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -24,13 +23,13 @@ import { operators, equipments } from "@/lib/data";
 
 // Função para inicializar dados de exemplo se necessário
 const initializeDemoData = () => {
-  // Verificar se já existem operadores
+  // Verificar se já existem operadores e inicializar com dados originais
   if (!localStorage.getItem('gearcheck-operators')) {
     localStorage.setItem('gearcheck-operators', JSON.stringify(operators));
     console.log("Operadores originais inicializados");
   }
 
-  // Verificar se já existem equipamentos
+  // Verificar se já existem equipamentos e inicializar com dados originais
   if (!localStorage.getItem('gearcheck-equipments')) {
     localStorage.setItem('gearcheck-equipments', JSON.stringify(equipments));
     console.log("Equipamentos originais inicializados");
