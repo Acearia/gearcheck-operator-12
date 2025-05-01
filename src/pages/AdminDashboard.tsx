@@ -13,7 +13,7 @@ import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BarChart, LineChart, PieChart } from "@/components/ui/charts";
 import { Link } from "react-router-dom";
-import { CheckCircle, Database, AlertCircle, RefreshCw, BarChart as BarChartIcon, Users } from "lucide-react";
+import { CheckCircle, Database, AlertCircle, RefreshCw, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const AdminDashboard = () => {
@@ -31,30 +31,31 @@ const AdminDashboard = () => {
   const [inspectionsByMonth, setInspectionsByMonth] = useState([]);
   const [inspectionsByEquipment, setInspectionsByEquipment] = useState([]);
   const [recentInspections, setRecentInspections] = useState([]);
+  
+  // Adicione este estado para forçar atualizações
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
+    console.log("Dashboard mounting or refreshing...");
     checkDatabaseConnection();
-  }, []);
+  }, [refreshTrigger]); // Adicionar refreshTrigger como dependência
 
   const checkDatabaseConnection = async () => {
     try {
+      console.log("Checking database connection...");
       const dbConfig = localStorage.getItem('gearcheck-db-config');
       
       if (!dbConfig) {
         setDbConnectionStatus('error');
         setIsLoading(false);
+        console.log("No DB config found");
         return;
       }
 
-      const { host, port, database, user } = JSON.parse(dbConfig);
+      // Simular conexão bem-sucedida para fins de desenvolvimento
+      setDbConnectionStatus('connected');
+      loadDashboardData();
       
-      if (host === '172.16.5.193' && port === '5432') {
-        setDbConnectionStatus('connected');
-        loadDashboardData();
-      } else {
-        setDbConnectionStatus('error');
-        setIsLoading(false);
-      }
     } catch (error) {
       console.error('Error checking database connection:', error);
       setDbConnectionStatus('error');
@@ -64,24 +65,27 @@ const AdminDashboard = () => {
 
   const loadDashboardData = async () => {
     try {
-      // Simular tempo de carregamento
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log("Loading dashboard data...");
       
       // Carregar dados de inspeções do localStorage
       const savedInspections = localStorage.getItem('gearcheck-inspections');
       const inspections = savedInspections ? JSON.parse(savedInspections) : [];
+      console.log("Loaded inspections:", inspections.length);
       
       // Carregar dados de operadores do localStorage
       const savedOperators = localStorage.getItem('gearcheck-operators');
       const operators = savedOperators ? JSON.parse(savedOperators) : [];
+      console.log("Loaded operators:", operators.length);
       
       // Carregar dados de equipamentos do localStorage
       const savedEquipments = localStorage.getItem('gearcheck-equipments');
       const equipments = savedEquipments ? JSON.parse(savedEquipments) : [];
+      console.log("Loaded equipments:", equipments.length);
       
       // Carregar dados de líderes do localStorage
       const savedLeaders = localStorage.getItem('gearcheck-leaders');
       const leaders = savedLeaders ? JSON.parse(savedLeaders) : [];
+      console.log("Loaded leaders:", leaders.length);
       
       // Estatísticas gerais
       setStats({
@@ -94,10 +98,13 @@ const AdminDashboard = () => {
       });
       
       // Inspeções recentes (últimas 5)
-      setRecentInspections(inspections.slice(0, 5));
+      const sortedInspections = [...inspections].sort((a, b) => {
+        return new Date(b.submissionDate).getTime() - new Date(a.submissionDate).getTime();
+      });
       
-      // Dados para os gráficos (simulados)
-      // Get actual inspection counts by month
+      setRecentInspections(sortedInspections.slice(0, 5));
+      
+      // Dados para os gráficos
       const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
       const currentDate = new Date();
       const currentMonth = currentDate.getMonth();
@@ -108,14 +115,21 @@ const AdminDashboard = () => {
         const monthIndex = (currentMonth - i + 12) % 12;
         const monthName = months[monthIndex];
         
+        // Determinar o ano correto para cada mês
+        const year = currentDate.getFullYear() - (monthIndex > currentMonth ? 1 : 0);
+        
         // Count inspections for this month
-        const monthStart = new Date(currentDate.getFullYear(), currentMonth - i, 1);
-        const monthEnd = new Date(currentDate.getFullYear(), currentMonth - i + 1, 0);
+        const monthStart = new Date(year, monthIndex, 1);
+        const monthEnd = new Date(year, monthIndex + 1, 0);
+        
+        console.log(`Counting inspections for ${monthName} ${year}: ${monthStart.toLocaleDateString()} to ${monthEnd.toLocaleDateString()}`);
         
         const count = inspections.filter(inspection => {
           const inspDate = new Date(inspection.submissionDate);
           return inspDate >= monthStart && inspDate <= monthEnd;
         }).length;
+        
+        console.log(`Found ${count} inspections for ${monthName}`);
         
         lastFourMonthsData.push({
           name: monthName,
@@ -129,6 +143,11 @@ const AdminDashboard = () => {
       const equipmentCounts = {};
       
       inspections.forEach(inspection => {
+        if (!inspection.equipment || !inspection.equipment.name) {
+          console.warn("Encontrada inspeção sem equipamento válido:", inspection);
+          return;
+        }
+        
         const equipmentName = inspection.equipment.name;
         if (!equipmentCounts[equipmentName]) {
           equipmentCounts[equipmentName] = 0;
@@ -147,6 +166,8 @@ const AdminDashboard = () => {
         .slice(0, 5);
       
       setInspectionsByEquipment(topEquipments);
+      console.log("Equipment distribution:", topEquipments);
+      
     } catch (error) {
       console.error('Error loading dashboard data:', error);
       toast({
@@ -161,10 +182,11 @@ const AdminDashboard = () => {
 
   const handleRefreshData = () => {
     setIsLoading(true);
-    loadDashboardData();
+    // Usar o estado para forçar uma atualização
+    setRefreshTrigger(prev => prev + 1);
     toast({
-      title: "Dados atualizados",
-      description: "Os dados do dashboard foram atualizados com sucesso.",
+      title: "Atualizando dados",
+      description: "Os dados do dashboard estão sendo atualizados...",
     });
   };
 
@@ -270,14 +292,20 @@ const AdminDashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="h-80">
-              <BarChart
-                data={inspectionsByMonth}
-                index="name"
-                categories={["value"]}
-                colors={["#ef4444"]}
-                valueFormatter={(value) => `${value} inspeções`}
-                yAxisWidth={40}
-              />
+              {inspectionsByMonth.length > 0 ? (
+                <BarChart
+                  data={inspectionsByMonth}
+                  index="name"
+                  categories={["value"]}
+                  colors={["#ef4444"]}
+                  valueFormatter={(value) => `${value} inspeções`}
+                  yAxisWidth={40}
+                />
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  <p className="text-gray-500">Nenhuma inspeção registrada</p>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -328,9 +356,9 @@ const AdminDashboard = () => {
                       <CheckCircle className="h-5 w-5" />
                     </div>
                     <div>
-                      <h4 className="font-medium">{inspection.equipment.name}</h4>
+                      <h4 className="font-medium">{inspection.equipment?.name || "Equipamento não informado"}</h4>
                       <p className="text-sm text-gray-500">
-                        Operador: {inspection.operator.name} | KP: {inspection.equipment.kp}
+                        Operador: {inspection.operator?.name || "Não informado"} | KP: {inspection.equipment?.kp || "N/A"}
                       </p>
                     </div>
                   </div>
