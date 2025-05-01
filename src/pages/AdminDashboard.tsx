@@ -10,11 +10,11 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BarChart, LineChart, PieChart } from "@/components/ui/charts";
+import { BarChart, PieChart } from "@/components/ui/charts";
 import { Link } from "react-router-dom";
 import { CheckCircle, Database, AlertCircle, RefreshCw, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { operators as initialOperators, equipments as initialEquipments } from "@/lib/data";
 
 const AdminDashboard = () => {
   const { toast } = useToast();
@@ -67,20 +67,32 @@ const AdminDashboard = () => {
     try {
       console.log("Loading dashboard data...");
       
+      // Verificar se existem operadores no localStorage, se não, inicializar com os dados originais
+      let operators = [];
+      const savedOperators = localStorage.getItem('gearcheck-operators');
+      if (savedOperators) {
+        operators = JSON.parse(savedOperators);
+      } else {
+        operators = initialOperators;
+        localStorage.setItem('gearcheck-operators', JSON.stringify(initialOperators));
+      }
+      console.log("Loaded operators:", operators.length);
+      
+      // Verificar se existem equipamentos no localStorage, se não, inicializar com os dados originais
+      let equipments = [];
+      const savedEquipments = localStorage.getItem('gearcheck-equipments');
+      if (savedEquipments) {
+        equipments = JSON.parse(savedEquipments);
+      } else {
+        equipments = initialEquipments;
+        localStorage.setItem('gearcheck-equipments', JSON.stringify(initialEquipments));
+      }
+      console.log("Loaded equipments:", equipments.length);
+      
       // Carregar dados de inspeções do localStorage
       const savedInspections = localStorage.getItem('gearcheck-inspections');
       const inspections = savedInspections ? JSON.parse(savedInspections) : [];
       console.log("Loaded inspections:", inspections.length);
-      
-      // Carregar dados de operadores do localStorage
-      const savedOperators = localStorage.getItem('gearcheck-operators');
-      const operators = savedOperators ? JSON.parse(savedOperators) : [];
-      console.log("Loaded operators:", operators.length);
-      
-      // Carregar dados de equipamentos do localStorage
-      const savedEquipments = localStorage.getItem('gearcheck-equipments');
-      const equipments = savedEquipments ? JSON.parse(savedEquipments) : [];
-      console.log("Loaded equipments:", equipments.length);
       
       // Carregar dados de líderes do localStorage
       const savedLeaders = localStorage.getItem('gearcheck-leaders');

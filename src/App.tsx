@@ -20,29 +20,20 @@ import AdminSettings from "./pages/AdminSettings";
 import DatabaseConnection from "./pages/DatabaseConnection";
 import LeaderDashboard from "./pages/LeaderDashboard";
 import AdminLeaderDashboard from "./pages/AdminLeaderDashboard";
+import { operators, equipments } from "@/lib/data";
 
 // Função para inicializar dados de exemplo se necessário
 const initializeDemoData = () => {
   // Verificar se já existem operadores
   if (!localStorage.getItem('gearcheck-operators')) {
-    const sampleOperators = [
-      { id: "op1", name: "João Silva", registration: "12345", sector: "Produção" },
-      { id: "op2", name: "Maria Oliveira", registration: "23456", sector: "Manutenção" },
-      { id: "op3", name: "Carlos Santos", registration: "34567", sector: "Logística" }
-    ];
-    localStorage.setItem('gearcheck-operators', JSON.stringify(sampleOperators));
-    console.log("Operadores de demonstração inicializados");
+    localStorage.setItem('gearcheck-operators', JSON.stringify(operators));
+    console.log("Operadores originais inicializados");
   }
 
   // Verificar se já existem equipamentos
   if (!localStorage.getItem('gearcheck-equipments')) {
-    const sampleEquipments = [
-      { id: "eq1", name: "Empilhadeira A", kp: "EMP001", model: "Yale GP050", type: "Empilhadeira" },
-      { id: "eq2", name: "Caminhão B", kp: "CAM002", model: "Volvo FH460", type: "Caminhão" },
-      { id: "eq3", name: "Trator C", kp: "TRA003", model: "John Deere 5075E", type: "Trator" }
-    ];
-    localStorage.setItem('gearcheck-equipments', JSON.stringify(sampleEquipments));
-    console.log("Equipamentos de demonstração inicializados");
+    localStorage.setItem('gearcheck-equipments', JSON.stringify(equipments));
+    console.log("Equipamentos originais inicializados");
   }
 
   // Verificar se já existem líderes
@@ -52,17 +43,17 @@ const initializeDemoData = () => {
         id: "ldr1", 
         name: "Roberto Almeida", 
         email: "roberto@exemplo.com", 
-        sector: "Produção",
-        assignedOperators: ["op1"],
-        assignedEquipments: ["eq1"]
+        sector: "PRODUÇÃO",
+        assignedOperators: ["1260", "1363", "1377"],
+        assignedEquipments: ["207", "409"] 
       },
       { 
         id: "ldr2", 
         name: "Fernanda Lima", 
         email: "fernanda@exemplo.com", 
-        sector: "Manutenção",
-        assignedOperators: ["op2"],
-        assignedEquipments: ["eq2"] 
+        sector: "MANUTENÇÃO",
+        assignedOperators: ["1475", "1546", "1549"],
+        assignedEquipments: ["412", "1326"] 
       }
     ];
     localStorage.setItem('gearcheck-leaders', JSON.stringify(sampleLeaders));
@@ -77,31 +68,40 @@ const initializeDemoData = () => {
     const twoDaysAgo = new Date(today);
     twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
     
+    // Encontrar operador e equipamento reais para usar nas inspeções
+    const op1 = operators.find(op => op.id === "1260") || operators[0];
+    const op2 = operators.find(op => op.id === "1325") || operators[1];
+    const op3 = operators.find(op => op.id === "1329") || operators[2];
+    
+    const eq1 = equipments.find(eq => eq.id === "207") || equipments[0];
+    const eq2 = equipments.find(eq => eq.id === "409") || equipments[1];
+    const eq3 = equipments.find(eq => eq.id === "412") || equipments[2];
+    
     const sampleInspections = [
       {
         id: "insp1",
-        operator: { id: "op1", name: "João Silva", registration: "12345", sector: "Produção" },
-        equipment: { id: "eq1", name: "Empilhadeira A", kp: "EMP001", model: "Yale GP050", type: "Empilhadeira" },
+        operator: op1,
+        equipment: eq1,
         answers: { item1: true, item2: true, item3: false },
-        observations: "Tudo em ordem",
+        observations: "Checagem completa, sem problemas maiores",
         submissionDate: today.toISOString(),
         photos: []
       },
       {
         id: "insp2",
-        operator: { id: "op2", name: "Maria Oliveira", registration: "23456", sector: "Manutenção" },
-        equipment: { id: "eq2", name: "Caminhão B", kp: "CAM002", model: "Volvo FH460", type: "Caminhão" },
+        operator: op2,
+        equipment: eq2,
         answers: { item1: true, item2: false, item3: true },
-        observations: "Problema na iluminação",
+        observations: "Problema na iluminação, verificar",
         submissionDate: yesterday.toISOString(),
         photos: []
       },
       {
         id: "insp3",
-        operator: { id: "op3", name: "Carlos Santos", registration: "34567", sector: "Logística" },
-        equipment: { id: "eq3", name: "Trator C", kp: "TRA003", model: "John Deere 5075E", type: "Trator" },
+        operator: op3,
+        equipment: eq3,
         answers: { item1: false, item2: true, item3: true },
-        observations: "Verificar freios",
+        observations: "Verificar freios e sistema hidráulico",
         submissionDate: twoDaysAgo.toISOString(),
         photos: []
       }
