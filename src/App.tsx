@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -19,7 +20,7 @@ import AdminSettings from "./pages/AdminSettings";
 import DatabaseConnection from "./pages/DatabaseConnection";
 import LeaderDashboard from "./pages/LeaderDashboard";
 import AdminLeaderDashboard from "./pages/AdminLeaderDashboard";
-import { operators, equipments } from "@/lib/data";
+import { operators, equipments, checklistItems } from "@/lib/data";
 
 // Função para inicializar dados de exemplo se necessário
 const initializeDemoData = () => {

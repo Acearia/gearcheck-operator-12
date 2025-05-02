@@ -195,7 +195,7 @@ const AdminInspections = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos os equipamentos</SelectItem>
-                  {uniqueEquipments.map(equipment => (
+                  {uniqueEquipments && uniqueEquipments.map(equipment => (
                     <SelectItem key={equipment.id} value={equipment.id}>
                       {equipment.name}
                     </SelectItem>
@@ -214,7 +214,7 @@ const AdminInspections = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos os operadores</SelectItem>
-                  {uniqueOperators.map(operator => (
+                  {uniqueOperators && uniqueOperators.map(operator => (
                     <SelectItem key={operator.id} value={operator.id}>
                       {operator.name}
                     </SelectItem>
@@ -330,22 +330,29 @@ const AdminInspections = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {selectedInspection.checklist.map((item: any, index: number) => (
+                    {selectedInspection.answers && Object.entries(selectedInspection.answers).map(([key, value], index) => (
                       <TableRow key={index}>
-                        <TableCell>{item.question}</TableCell>
+                        <TableCell>{`Item ${key.replace('item', '')}`}</TableCell>
                         <TableCell className="text-right">
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            item.answer === 'Sim' ? 'bg-green-100 text-green-800' : 
-                            item.answer === 'Não' ? 'bg-red-100 text-red-800' : 
+                            value === true ? 'bg-green-100 text-green-800' : 
+                            value === false ? 'bg-red-100 text-red-800' : 
                             'bg-gray-100 text-gray-800'
                           }`}>
-                            {item.answer}
+                            {value === true ? 'Sim' : value === false ? 'Não' : 'N/A'}
                           </span>
                         </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
+              </div>
+              
+              <div>
+                <h3 className="font-medium mb-2">Observações</h3>
+                <div className="border p-3 rounded bg-gray-50">
+                  <p className="text-sm">{selectedInspection.observations || "Sem observações"}</p>
+                </div>
               </div>
               
               {selectedInspection.signature && (
@@ -379,4 +386,3 @@ const AdminInspections = () => {
 };
 
 export default AdminInspections;
-
