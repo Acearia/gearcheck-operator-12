@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -44,12 +44,24 @@ export function EditOperatorDialog({
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      id: operator.id,
-      name: operator.name,
-      cargo: operator.cargo || "",
-      setor: operator.setor || "",
+      id: operator?.id || "",
+      name: operator?.name || "",
+      cargo: operator?.cargo || "",
+      setor: operator?.setor || "",
     },
   });
+
+  // Update form values when the operator changes
+  useEffect(() => {
+    if (operator) {
+      form.reset({
+        id: operator.id,
+        name: operator.name,
+        cargo: operator.cargo || "",
+        setor: operator.setor || "",
+      });
+    }
+  }, [operator, form]);
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     // Ensure name is required and not empty
