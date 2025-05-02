@@ -5,13 +5,16 @@ import { Button } from "@/components/ui/button";
 import { PlusCircle, Search } from "lucide-react";
 import { operators as initialOperators, Operator } from "@/lib/data";
 import { AddOperatorDialog } from "@/components/operators/AddOperatorDialog";
+import { EditOperatorDialog } from "@/components/operators/EditOperatorDialog";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 
 const AdminOperators = () => {
   const [operators, setOperators] = useState<Operator[]>([]);
   const [displayedOperators, setDisplayedOperators] = useState<Operator[]>([]);
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [currentOperator, setCurrentOperator] = useState<Operator | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -82,6 +85,32 @@ const AdminOperators = () => {
     });
   };
 
+  const handleEditOperator = (data: { id: string; name: string; cargo?: string; setor?: string }) => {
+    const updatedOperators = operators.map(op => 
+      op.id === data.id 
+        ? { 
+            ...op, 
+            name: data.name.toUpperCase(), 
+            cargo: data.cargo?.toUpperCase() || undefined, 
+            setor: data.setor?.toUpperCase() || undefined 
+          } 
+        : op
+    );
+    
+    setOperators(updatedOperators);
+    
+    // Update localStorage
+    localStorage.setItem('gearcheck-operators', JSON.stringify(updatedOperators));
+    
+    toast({
+      title: "Operador atualizado",
+      description: "Os dados do operador foram atualizados com sucesso.",
+    });
+    
+    setEditDialogOpen(false);
+    setCurrentOperator(null);
+  };
+
   const handleRemoveOperator = (id: string) => {
     const updatedOperators = operators.filter(op => op.id !== id);
     setOperators(updatedOperators);
@@ -95,6 +124,11 @@ const AdminOperators = () => {
     });
   };
 
+  const openEditDialog = (operator: Operator) => {
+    setCurrentOperator(operator);
+    setEditDialogOpen(true);
+  };
+
   // Pagination
   const totalPages = Math.ceil(displayedOperators.length / itemsPerPage);
   const paginatedOperators = displayedOperators.slice(
@@ -105,10 +139,10 @@ const AdminOperators = () => {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Gerenciar Operadores</h1>
+        <h1 className="text-2xl font-bold">Gerenciar Operadores - Checklist AFM</h1>
         <Button 
           className="bg-red-700 hover:bg-red-800"
-          onClick={() => setDialogOpen(true)}
+          onClick={() => setAddDialogOpen(true)}
         >
           <PlusCircle size={16} className="mr-2" />
           Novo Operador
@@ -152,7 +186,12 @@ const AdminOperators = () => {
                     <td className="py-3 px-4">{operator.cargo || "-"}</td>
                     <td className="py-3 px-4">{operator.setor || "-"}</td>
                     <td className="py-3 px-4 text-center">
-                      <Button variant="outline" size="sm" className="mr-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="mr-2"
+                        onClick={() => openEditDialog(operator)}
+                      >
                         Editar
                       </Button>
                       <Button 
@@ -201,11 +240,22 @@ const AdminOperators = () => {
         </CardContent>
       </Card>
 
+      {/* Add Operator Dialog */}
       <AddOperatorDialog 
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
+        open={addDialogOpen}
+        onOpenChange={setAddDialogOpen}
         onAddOperator={handleAddOperator}
       />
+
+      {/* Edit Operator Dialog */}
+      {currentOperator && (
+        <EditOperatorDialog
+          open={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
+          operator={currentOperator}
+          onEditOperator={handleEditOperator}
+        />
+      )}
     </div>
   );
 };

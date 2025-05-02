@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { PlusCircle, Download, FileText, Search, RefreshCw } from "lucide-react";
 import { equipments as initialEquipments, Equipment } from "@/lib/data";
 import { AddEquipmentDialog } from "@/components/equipment/AddEquipmentDialog";
+import { EditEquipmentDialog } from "@/components/equipment/EditEquipmentDialog";
 import { useToast } from "@/hooks/use-toast";
 import jsPDF from "jspdf";
 import { format } from "date-fns";
@@ -14,7 +15,9 @@ import { Input } from "@/components/ui/input";
 const AdminEquipment = () => {
   const [equipments, setEquipments] = useState<Equipment[]>([]);
   const [displayedEquipments, setDisplayedEquipments] = useState<Equipment[]>([]);
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [currentEquipment, setCurrentEquipment] = useState<Equipment | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -104,6 +107,25 @@ const AdminEquipment = () => {
     });
   };
 
+  const handleEditEquipment = (data: Equipment) => {
+    const updatedEquipments = equipments.map(eq => 
+      eq.id === data.id ? data : eq
+    );
+    
+    setEquipments(updatedEquipments);
+    
+    // Update localStorage
+    localStorage.setItem('gearcheck-equipments', JSON.stringify(updatedEquipments));
+    
+    toast({
+      title: "Equipamento atualizado",
+      description: "O equipamento foi atualizado com sucesso.",
+    });
+    
+    setEditDialogOpen(false);
+    setCurrentEquipment(null);
+  };
+
   const handleRemoveEquipment = (id: string) => {
     const updatedEquipments = equipments.filter(eq => eq.id !== id);
     setEquipments(updatedEquipments);
@@ -117,13 +139,18 @@ const AdminEquipment = () => {
     });
   };
 
+  const openEditDialog = (equipment: Equipment) => {
+    setCurrentEquipment(equipment);
+    setEditDialogOpen(true);
+  };
+
   const exportToPDF = () => {
     try {
       const doc = new jsPDF();
       
       // Cabeçalho
       doc.setFontSize(20);
-      doc.text("Lista de Equipamentos", 20, 20);
+      doc.text("Lista de Equipamentos - Checklist AFM", 20, 20);
       
       doc.setFontSize(12);
       doc.text(`Data do relatório: ${format(new Date(), "PP", { locale: ptBR })}`, 20, 30);
@@ -181,7 +208,7 @@ const AdminEquipment = () => {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Gerenciar Equipamentos</h1>
+        <h1 className="text-2xl font-bold">Gerenciar Equipamentos - Checklist AFM</h1>
         <div className="flex gap-2">
           <Button 
             variant="outline"
@@ -201,7 +228,7 @@ const AdminEquipment = () => {
           </Button>
           <Button 
             className="bg-red-700 hover:bg-red-800"
-            onClick={() => setDialogOpen(true)}
+            onClick={() => setAddDialogOpen(true)}
           >
             <PlusCircle size={16} className="mr-2" />
             Novo Equipamento
@@ -260,7 +287,12 @@ const AdminEquipment = () => {
                         equipment.type === "3" ? "Pórtico" : "Outro"}
                       </td>
                       <td className="py-3 px-4 text-center">
-                        <Button variant="outline" size="sm" className="mr-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="mr-2"
+                          onClick={() => openEditDialog(equipment)}
+                        >
                           Editar
                         </Button>
                         <Button 
@@ -310,11 +342,22 @@ const AdminEquipment = () => {
         </CardContent>
       </Card>
 
+      {/* Add Equipment Dialog */}
       <AddEquipmentDialog 
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
+        open={addDialogOpen}
+        onOpenChange={setAddDialogOpen}
         onAddEquipment={handleAddEquipment}
       />
+
+      {/* Edit Equipment Dialog */}
+      {currentEquipment && (
+        <EditEquipmentDialog 
+          open={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
+          equipment={currentEquipment}
+          onEditEquipment={handleEditEquipment}
+        />
+      )}
     </div>
   );
 };
