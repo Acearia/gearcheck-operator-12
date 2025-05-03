@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Check, X, ChevronDown, ArrowLeft, Database, Save, Settings, Camera, FileImage, MessageCircle } from "lucide-react";
@@ -15,6 +16,14 @@ import { operators as initialOperators, equipments as initialEquipments, checkli
 import { AddOperatorDialog } from "@/components/operators/AddOperatorDialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 const Checklist = () => {
   const { toast } = useToast();
@@ -31,14 +40,70 @@ const Checklist = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [dbConnectionStatus, setDbConnectionStatus] = useState<'unchecked' | 'connected' | 'error'>('unchecked');
+  const [isLoadingData, setIsLoadingData] = useState(true);
+  const [showDebugInfo, setShowDebugInfo] = useState(false);
   
   // New state for photos and comments
   const [photos, setPhotos] = useState<{ id: string, data: string }[]>([]);
   const [comments, setComments] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Process the initial operators data and save to localStorage
+  const processInitialOperators = (inputOperators: string | Operator[]) => {
+    console.log("Processing initial operators data");
+    
+    let operatorsData: Operator[];
+    
+    if (typeof inputOperators === 'string') {
+      // Se é uma string, é um texto para processamento (de clipboard ou arquivo)
+      try {
+        // Dividimos o texto em linhas
+        const lines = inputOperators.split('\n').filter(line => line.trim() !== '');
+        
+        // Para cada linha, criamos um operador
+        operatorsData = lines.map(line => {
+          const parts = line.split('\t');
+          if (parts.length >= 2) {
+            return {
+              id: parts[0].trim(),
+              name: parts[1].trim().toUpperCase(),
+              cargo: parts.length > 2 ? parts[2].trim() : "",
+              setor: parts.length > 3 ? parts[3].trim() : ""
+            };
+          }
+          return null;
+        }).filter(op => op !== null) as Operator[];
+        
+      } catch (error) {
+        console.error("Erro ao processar texto de operadores:", error);
+        // Em caso de erro, use a lista inicial
+        operatorsData = initialOperators.map(op => ({
+          id: op.id,
+          name: op.name.toUpperCase(),
+          cargo: op.cargo || "",
+          setor: op.setor || ""
+        }));
+      }
+    } else {
+      // Se não é uma string, é um array de operadores
+      operatorsData = inputOperators.map(op => ({
+        id: op.id,
+        name: op.name.toUpperCase(),
+        cargo: op.cargo || "",
+        setor: op.setor || ""
+      }));
+    }
+    
+    // Salvar no localStorage
+    localStorage.setItem('gearcheck-operators', JSON.stringify(operatorsData));
+    setOperators(operatorsData);
+    console.log(`Processado e salvo ${operatorsData.length} operadores`);
+    return operatorsData;
+  };
+
   // Load data from localStorage or use initial data
   useEffect(() => {
+    setIsLoadingData(true);
     checkDatabaseConnection();
     loadOperatorsAndEquipments();
   }, []);
@@ -46,24 +111,35 @@ const Checklist = () => {
   const loadOperatorsAndEquipments = () => {
     console.log("Loading operators from localStorage");
     
-    // Load operators
     try {
+      // Load operators
       const storedOperators = localStorage.getItem('gearcheck-operators');
+      
       if (storedOperators) {
-        const parsedOperators = JSON.parse(storedOperators);
-        console.log(`Loaded ${parsedOperators.length} operators from localStorage`);
-        setOperators(parsedOperators);
+        try {
+          const parsedOperators = JSON.parse(storedOperators);
+          if (Array.isArray(parsedOperators) && parsedOperators.length > 0) {
+            console.log(`Loaded ${parsedOperators.length} operators from localStorage`);
+            setOperators(parsedOperators);
+          } else {
+            console.log("Operators array is empty or invalid, processing initial data");
+            processInitialOperators(initialOperators);
+          }
+        } catch (parseError) {
+          console.error("Error parsing operators JSON:", parseError);
+          processInitialOperators(initialOperators);
+        }
       } else {
         console.log("No operators found in localStorage, using initial data");
-        processInitialOperators();
+        processInitialOperators(initialOperators);
       }
     } catch (e) {
       console.error('Error loading operators:', e);
-      processInitialOperators();
+      processInitialOperators(initialOperators);
     }
     
-    // Load equipments
     try {
+      // Load equipments
       const storedEquipments = localStorage.getItem('gearcheck-equipments');
       if (storedEquipments) {
         const parsedEquipments = JSON.parse(storedEquipments);
@@ -71,30 +147,15 @@ const Checklist = () => {
         setEquipments(parsedEquipments);
       } else {
         console.log("No equipments found in localStorage, using initial data");
+        localStorage.setItem('gearcheck-equipments', JSON.stringify(initialEquipments));
         setEquipments(initialEquipments);
       }
     } catch (e) {
       console.error('Error loading equipments:', e);
       setEquipments(initialEquipments);
     }
-  };
-
-  // Process the initial operators data and save to localStorage
-  const processInitialOperators = () => {
-    console.log("Processing initial operators data");
     
-    // If not found in localStorage, use the hard-coded list
-    const operatorsData = initialOperators.map(op => ({
-      id: op.id,
-      name: op.name.toUpperCase(),
-      cargo: op.cargo || "",
-      setor: op.setor || ""
-    }));
-    
-    // Save to localStorage
-    localStorage.setItem('gearcheck-operators', JSON.stringify(operatorsData));
-    setOperators(operatorsData);
-    console.log(`Processed and saved ${operatorsData.length} operators`);
+    setIsLoadingData(false);
   };
 
   const checkDatabaseConnection = async () => {
@@ -191,6 +252,11 @@ const Checklist = () => {
 
   const triggerFileInput = () => {
     fileInputRef.current?.click();
+  };
+
+  // Toggle debug information visibility
+  const toggleDebugInfo = () => {
+    setShowDebugInfo(!showDebugInfo);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -309,6 +375,26 @@ const Checklist = () => {
     navigate('/admin/database');
   };
 
+  const handleImportOperators = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text && text.includes('\t')) {
+        const importedOperators = processInitialOperators(text);
+        toast({
+          title: "Operadores importados",
+          description: `${importedOperators.length} operadores foram importados com sucesso.`,
+        });
+      }
+    } catch (err) {
+      console.error("Erro ao acessar a área de transferência:", err);
+      toast({
+        title: "Erro",
+        description: "Não foi possível acessar a área de transferência",
+        variant: "destructive",
+      });
+    }
+  };
+
   const getEquipmentTypeText = (type: string) => {
     switch (type) {
       case "1": return "Ponte";
@@ -326,6 +412,13 @@ const Checklist = () => {
         </Link>
         <h1 className="font-bold text-lg">Check List Online</h1>
         <div className="flex items-center space-x-2">
+          <button 
+            onClick={toggleDebugInfo}
+            className="text-white bg-red-800 p-1 rounded-full"
+            aria-label="Debug Info"
+          >
+            <div className="h-6 w-6 flex items-center justify-center">?</div>
+          </button>
           <button 
             onClick={() => setDialogOpen(true)} 
             className="text-white bg-red-800 p-1 rounded-full"
@@ -348,6 +441,32 @@ const Checklist = () => {
           </AlertDescription>
         </Alert>
       )}
+      
+      {/* Debug Information */}
+      {showDebugInfo && (
+        <Alert className="mx-4 mt-4 bg-blue-50">
+          <AlertTitle className="flex justify-between">
+            <span>Informações de Depuração</span>
+            <Button variant="outline" size="sm" onClick={handleImportOperators}>
+              Importar Operadores do Clipboard
+            </Button>
+          </AlertTitle>
+          <AlertDescription>
+            <div className="space-y-2 text-xs font-mono bg-gray-100 p-2 rounded mt-2 max-h-40 overflow-auto">
+              <div>Operadores carregados: {operators.length}</div>
+              <div>Equipamentos carregados: {equipments.length}</div>
+              <div>Carregando dados: {isLoadingData ? "Sim" : "Não"}</div>
+              <div>DB Status: {dbConnectionStatus}</div>
+              <div className="font-bold mt-2">Primeiros 5 operadores:</div>
+              {operators.slice(0, 5).map((op, idx) => (
+                <div key={idx}>
+                  ID: {op.id}, Nome: {op.name}, Cargo: {op.cargo || "N/A"}, Setor: {op.setor || "N/A"}
+                </div>
+              ))}
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
 
       <div className="flex-1 p-4 max-w-3xl mx-auto w-full overflow-auto">
         <form onSubmit={handleSubmit}>
@@ -361,7 +480,7 @@ const Checklist = () => {
                   {operators && operators.length > 0 ? (
                     operators.map(operator => (
                       <SelectItem key={operator.id} value={operator.id}>
-                        {operator.name}
+                        {operator.id} - {operator.name}
                       </SelectItem>
                     ))
                   ) : (

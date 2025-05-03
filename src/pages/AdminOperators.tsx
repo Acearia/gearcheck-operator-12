@@ -8,6 +8,22 @@ import { AddOperatorDialog } from "@/components/operators/AddOperatorDialog";
 import { EditOperatorDialog } from "@/components/operators/EditOperatorDialog";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHeader,
+  TableHead,
+  TableRow
+} from "@/components/ui/table";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious
+} from "@/components/ui/pagination";
 
 const AdminOperators = () => {
   const [operators, setOperators] = useState<Operator[]>([]);
@@ -21,6 +37,45 @@ const AdminOperators = () => {
   const { toast } = useToast();
   
   console.log("AdminOperators component rendering");
+  
+  // Função para importar operadores do texto
+  const processOperatorText = (operatorText: string) => {
+    try {
+      // Dividimos o texto em linhas
+      const lines = operatorText.split('\n').filter(line => line.trim() !== '');
+      
+      // Para cada linha, criamos um operador
+      const parsedOperators = lines.map(line => {
+        const parts = line.split('\t');
+        if (parts.length >= 3) {
+          return {
+            id: parts[0].trim(),
+            name: parts[1].trim().toUpperCase(),
+            cargo: parts[2].trim(),
+            setor: parts.length > 3 ? parts[3].trim() : undefined
+          };
+        }
+        return null;
+      }).filter(op => op !== null) as Operator[];
+      
+      // Atualiza a lista de operadores e salva no localStorage
+      if (parsedOperators.length > 0) {
+        setOperators(parsedOperators);
+        localStorage.setItem('gearcheck-operators', JSON.stringify(parsedOperators));
+        toast({
+          title: "Operadores importados",
+          description: `${parsedOperators.length} operadores foram importados com sucesso.`,
+        });
+      }
+    } catch (e) {
+      console.error('Erro ao processar texto de operadores:', e);
+      toast({
+        title: "Erro ao importar",
+        description: "Não foi possível processar o texto de operadores.",
+        variant: "destructive",
+      });
+    }
+  };
   
   // Load operators from localStorage on component mount
   useEffect(() => {
@@ -184,29 +239,58 @@ const AdminOperators = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle>Lista de Operadores ({displayedOperators.length})</CardTitle>
+          <div className="flex justify-between items-center">
+            <CardTitle>Lista de Operadores ({displayedOperators.length})</CardTitle>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => {
+                // Verificar se temos operadores no clipboard
+                navigator.clipboard.readText().then(text => {
+                  if (text && text.includes('\t')) {
+                    processOperatorText(text);
+                  } else {
+                    toast({
+                      title: "Texto inválido",
+                      description: "Cole uma lista de operadores no formato Matricula\\tNome\\tCargo\\tSetor",
+                      variant: "destructive",
+                    });
+                  }
+                }).catch(err => {
+                  console.error("Erro ao acessar a área de transferência:", err);
+                  toast({
+                    title: "Erro",
+                    description: "Não foi possível acessar a área de transferência",
+                    variant: "destructive",
+                  });
+                });
+              }}
+            >
+              Importar do Clipboard
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4">ID</th>
-                  <th className="text-left py-3 px-4">Nome</th>
-                  <th className="text-left py-3 px-4">Cargo</th>
-                  <th className="text-left py-3 px-4">Setor</th>
-                  <th className="text-center py-3 px-4">Ações</th>
-                </tr>
-              </thead>
-              <tbody>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>ID</TableHead>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Cargo</TableHead>
+                  <TableHead>Setor</TableHead>
+                  <TableHead className="text-center">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {paginatedOperators.length > 0 ? (
                   paginatedOperators.map((operator) => (
-                    <tr key={operator.id} className="border-b border-gray-200 hover:bg-gray-50">
-                      <td className="py-3 px-4">{operator.id}</td>
-                      <td className="py-3 px-4">{operator.name}</td>
-                      <td className="py-3 px-4">{operator.cargo || "-"}</td>
-                      <td className="py-3 px-4">{operator.setor || "-"}</td>
-                      <td className="py-3 px-4 text-center">
+                    <TableRow key={operator.id} className="hover:bg-gray-50">
+                      <TableCell>{operator.id}</TableCell>
+                      <TableCell>{operator.name}</TableCell>
+                      <TableCell>{operator.cargo || "-"}</TableCell>
+                      <TableCell>{operator.setor || "-"}</TableCell>
+                      <TableCell className="text-center">
                         <Button 
                           variant="outline" 
                           size="sm" 
@@ -223,44 +307,67 @@ const AdminOperators = () => {
                         >
                           Remover
                         </Button>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))
                 ) : (
-                  <tr>
-                    <td colSpan={5} className="text-center py-8">
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-8">
                       {operators.length === 0 
                         ? "Nenhum operador cadastrado ainda." 
                         : "Nenhum operador encontrado com a busca atual."}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 )}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
           
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-center space-x-2 mt-6">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-              >
-                Anterior
-              </Button>
-              <span className="text-sm text-gray-600">
-                Página {currentPage} de {totalPages}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                disabled={currentPage === totalPages}
-              >
-                Próxima
-              </Button>
+            <div className="mt-6">
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious 
+                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+                    />
+                  </PaginationItem>
+                  
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter(page => 
+                      page === 1 || 
+                      page === totalPages || 
+                      Math.abs(page - currentPage) <= 1
+                    )
+                    .map((page, index, array) => (
+                      <React.Fragment key={page}>
+                        {index > 0 && array[index - 1] !== page - 1 && (
+                          <PaginationItem>
+                            <span className="flex h-9 w-9 items-center justify-center">...</span>
+                          </PaginationItem>
+                        )}
+                        <PaginationItem>
+                          <PaginationLink 
+                            isActive={page === currentPage}
+                            onClick={() => setCurrentPage(page)}
+                          >
+                            {page}
+                          </PaginationLink>
+                        </PaginationItem>
+                      </React.Fragment>
+                    ))
+                  }
+                  
+                  <PaginationItem>
+                    <PaginationNext 
+                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                      className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
             </div>
           )}
           
