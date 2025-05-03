@@ -37,36 +37,65 @@ const Checklist = () => {
   const [comments, setComments] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Load data from localStorage or use initial data
   useEffect(() => {
     checkDatabaseConnection();
+    loadOperatorsAndEquipments();
   }, []);
 
-  useEffect(() => {
-    const storedOperators = localStorage.getItem('gearcheck-operators');
-    const storedEquipments = localStorage.getItem('gearcheck-equipments');
+  const loadOperatorsAndEquipments = () => {
+    console.log("Loading operators from localStorage");
     
-    if (storedOperators) {
-      try {
-        setOperators(JSON.parse(storedOperators));
-      } catch (e) {
-        console.error('Error parsing operators from localStorage:', e);
-        setOperators(initialOperators);
+    // Load operators
+    try {
+      const storedOperators = localStorage.getItem('gearcheck-operators');
+      if (storedOperators) {
+        const parsedOperators = JSON.parse(storedOperators);
+        console.log(`Loaded ${parsedOperators.length} operators from localStorage`);
+        setOperators(parsedOperators);
+      } else {
+        console.log("No operators found in localStorage, using initial data");
+        processInitialOperators();
       }
-    } else {
-      setOperators(initialOperators);
+    } catch (e) {
+      console.error('Error loading operators:', e);
+      processInitialOperators();
     }
     
-    if (storedEquipments) {
-      try {
-        setEquipments(JSON.parse(storedEquipments));
-      } catch (e) {
-        console.error('Error parsing equipments from localStorage:', e);
+    // Load equipments
+    try {
+      const storedEquipments = localStorage.getItem('gearcheck-equipments');
+      if (storedEquipments) {
+        const parsedEquipments = JSON.parse(storedEquipments);
+        console.log(`Loaded ${parsedEquipments.length} equipments from localStorage`);
+        setEquipments(parsedEquipments);
+      } else {
+        console.log("No equipments found in localStorage, using initial data");
         setEquipments(initialEquipments);
       }
-    } else {
+    } catch (e) {
+      console.error('Error loading equipments:', e);
       setEquipments(initialEquipments);
     }
-  }, []);
+  };
+
+  // Process the initial operators data and save to localStorage
+  const processInitialOperators = () => {
+    console.log("Processing initial operators data");
+    
+    // If not found in localStorage, use the hard-coded list
+    const operatorsData = initialOperators.map(op => ({
+      id: op.id,
+      name: op.name.toUpperCase(),
+      cargo: op.cargo || "",
+      setor: op.setor || ""
+    }));
+    
+    // Save to localStorage
+    localStorage.setItem('gearcheck-operators', JSON.stringify(operatorsData));
+    setOperators(operatorsData);
+    console.log(`Processed and saved ${operatorsData.length} operators`);
+  };
 
   const checkDatabaseConnection = async () => {
     try {
@@ -91,8 +120,10 @@ const Checklist = () => {
   };
 
   const handleOperatorSelect = (operatorId: string) => {
-    const operator = operators.find(op => op.id === operatorId) || null;
-    setSelectedOperator(operator);
+    console.log("Selecting operator with ID:", operatorId);
+    const operator = operators.find(op => op.id === operatorId);
+    console.log("Found operator:", operator);
+    setSelectedOperator(operator || null);
   };
 
   const handleEquipmentSelect = (equipmentId: string) => {
@@ -109,7 +140,11 @@ const Checklist = () => {
   };
 
   const handleAddOperator = (data: { name: string; cargo?: string; setor?: string }) => {
-    const maxId = Math.max(...operators.map(op => parseInt(op.id)));
+    // Generate a new ID
+    let maxId = 0;
+    if (operators.length > 0) {
+      maxId = Math.max(...operators.map(op => parseInt(op.id)));
+    }
     const nextId = (maxId + 1).toString();
     
     const newOperator: Operator = {
@@ -122,6 +157,7 @@ const Checklist = () => {
     const updatedOperators = [newOperator, ...operators];
     setOperators(updatedOperators);
     
+    // Store the updated list in localStorage
     localStorage.setItem('gearcheck-operators', JSON.stringify(updatedOperators));
     
     toast({
@@ -322,13 +358,24 @@ const Checklist = () => {
                   <SelectValue placeholder="Selecione um operador" />
                 </SelectTrigger>
                 <SelectContent>
-                  {operators.map(operator => (
-                    <SelectItem key={operator.id} value={operator.id}>
-                      {operator.name}
+                  {operators && operators.length > 0 ? (
+                    operators.map(operator => (
+                      <SelectItem key={operator.id} value={operator.id}>
+                        {operator.name}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="no-operators" disabled>
+                      Nenhum operador encontrado
                     </SelectItem>
-                  ))}
+                  )}
                 </SelectContent>
               </Select>
+              {operators.length === 0 && (
+                <div className="mt-2 text-sm text-red-500">
+                  Nenhum operador cadastrado. Adicione um operador clicando no botão + acima.
+                </div>
+              )}
             </div>
             
             {selectedOperator && (

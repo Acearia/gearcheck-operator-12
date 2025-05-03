@@ -41,13 +41,16 @@ export function EditOperatorDialog({
   operator: Operator;
   onEditOperator: (data: { id: string; name: string; cargo?: string; setor?: string }) => void;
 }) {
+  // Check if operator exists to avoid null reference errors
+  const operatorData = operator || { id: "", name: "", cargo: "", setor: "" };
+  
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      id: operator?.id || "",
-      name: operator?.name || "",
-      cargo: operator?.cargo || "",
-      setor: operator?.setor || "",
+      id: operatorData.id || "",
+      name: operatorData.name || "",
+      cargo: operatorData.cargo || "",
+      setor: operatorData.setor || "",
     },
   });
 
