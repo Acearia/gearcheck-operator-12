@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -17,6 +16,7 @@ import AdminOperators from "./pages/AdminOperators";
 import AdminEquipment from "./pages/AdminEquipment";
 import AdminReports from "./pages/AdminReports";
 import AdminSettings from "./pages/AdminSettings";
+import AdminChecklistsOverview from "./pages/AdminChecklistsOverview";
 import DatabaseConnection from "./pages/DatabaseConnection";
 import LeaderDashboard from "./pages/LeaderDashboard";
 import AdminLeaderDashboard from "./pages/AdminLeaderDashboard";
@@ -34,6 +34,19 @@ const initializeDemoData = () => {
   if (!localStorage.getItem('gearcheck-equipments')) {
     localStorage.setItem('gearcheck-equipments', JSON.stringify(equipments));
     console.log("Equipamentos originais inicializados");
+  }
+
+  // Adicionar bridge number aos equipamentos se não existir
+  if (localStorage.getItem('gearcheck-equipments')) {
+    const storedEquipments = JSON.parse(localStorage.getItem('gearcheck-equipments') || '[]');
+    const updatedEquipments = storedEquipments.map((eq: any) => {
+      if (!eq.bridgeNumber && eq.id) {
+        // Atribuir números de ponte baseados no ID como exemplo
+        return { ...eq, bridgeNumber: String(parseInt(eq.id) % 20 + 1).padStart(2, '0') };
+      }
+      return eq;
+    });
+    localStorage.setItem('gearcheck-equipments', JSON.stringify(updatedEquipments));
   }
 
   // Verificar se já existem líderes
@@ -154,6 +167,7 @@ const App = () => {
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<AdminDashboard />} />
               <Route path="inspections" element={<AdminInspections />} />
+              <Route path="checklists" element={<AdminChecklistsOverview />} />
               <Route path="operators" element={<AdminOperators />} />
               <Route path="equipment" element={<AdminEquipment />} />
               <Route path="leaders" element={<AdminLeaderDashboard />} />
