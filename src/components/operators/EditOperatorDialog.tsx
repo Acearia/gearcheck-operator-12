@@ -55,8 +55,8 @@ export function EditOperatorDialog({
   useEffect(() => {
     if (operator) {
       form.reset({
-        id: operator.id,
-        name: operator.name,
+        id: operator.id || "",
+        name: operator.name || "",
         cargo: operator.cargo || "",
         setor: operator.setor || "",
       });

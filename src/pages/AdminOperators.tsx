@@ -20,21 +20,31 @@ const AdminOperators = () => {
   const itemsPerPage = 10;
   const { toast } = useToast();
   
+  console.log("AdminOperators component rendering");
+  
   // Load operators from localStorage on component mount
   useEffect(() => {
-    const storedOperators = localStorage.getItem('gearcheck-operators');
-    if (storedOperators) {
-      try {
+    console.log("Loading operators from localStorage");
+    
+    try {
+      // First try to get operators from localStorage
+      const storedOperators = localStorage.getItem('gearcheck-operators');
+      
+      if (storedOperators) {
         const parsedOperators = JSON.parse(storedOperators);
+        console.log(`Loaded ${parsedOperators.length} operators from localStorage`);
         setOperators(parsedOperators);
         setDisplayedOperators(parsedOperators);
-      } catch (e) {
-        console.error('Erro ao carregar operadores do localStorage:', e);
+      } else {
+        // If no operators in localStorage, use initial data and save it
+        console.log("No operators in localStorage, initializing with default data");
         localStorage.setItem('gearcheck-operators', JSON.stringify(initialOperators));
         setOperators(initialOperators);
         setDisplayedOperators(initialOperators);
       }
-    } else {
+    } catch (e) {
+      console.error('Erro ao carregar operadores:', e);
+      // In case of error, reset to initial data
       localStorage.setItem('gearcheck-operators', JSON.stringify(initialOperators));
       setOperators(initialOperators);
       setDisplayedOperators(initialOperators);
@@ -43,13 +53,17 @@ const AdminOperators = () => {
   
   // Filter operators based on search term
   useEffect(() => {
+    if (operators.length === 0) return;
+    
+    console.log(`Filtering operators with search term: "${searchTerm}"`);
+    
     if (searchTerm.trim() === '') {
       setDisplayedOperators(operators);
       setCurrentPage(1);
     } else {
       const filtered = operators.filter(op => 
-        op.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        op.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        op.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        op.id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (op.setor && op.setor.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (op.cargo && op.cargo.toLowerCase().includes(searchTerm.toLowerCase()))
       );
@@ -112,6 +126,9 @@ const AdminOperators = () => {
   };
 
   const handleRemoveOperator = (id: string) => {
+    const operatorToRemove = operators.find(op => op.id === id);
+    if (!operatorToRemove) return;
+    
     const updatedOperators = operators.filter(op => op.id !== id);
     setOperators(updatedOperators);
     
@@ -120,11 +137,12 @@ const AdminOperators = () => {
     
     toast({
       title: "Operador removido",
-      description: "O operador foi removido com sucesso.",
+      description: `${operatorToRemove.name} foi removido com sucesso.`,
     });
   };
 
   const openEditDialog = (operator: Operator) => {
+    console.log("Opening edit dialog for operator:", operator);
     setCurrentOperator(operator);
     setEditDialogOpen(true);
   };
@@ -135,6 +153,8 @@ const AdminOperators = () => {
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
+
+  console.log(`Displaying ${paginatedOperators.length} operators out of ${displayedOperators.length} (filtered from ${operators.length} total)`);
 
   return (
     <div>
@@ -179,32 +199,42 @@ const AdminOperators = () => {
                 </tr>
               </thead>
               <tbody>
-                {paginatedOperators.map((operator) => (
-                  <tr key={operator.id} className="border-b border-gray-200 hover:bg-gray-50">
-                    <td className="py-3 px-4">{operator.id}</td>
-                    <td className="py-3 px-4">{operator.name}</td>
-                    <td className="py-3 px-4">{operator.cargo || "-"}</td>
-                    <td className="py-3 px-4">{operator.setor || "-"}</td>
-                    <td className="py-3 px-4 text-center">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="mr-2"
-                        onClick={() => openEditDialog(operator)}
-                      >
-                        Editar
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600"
-                        onClick={() => handleRemoveOperator(operator.id)}
-                      >
-                        Remover
-                      </Button>
+                {paginatedOperators.length > 0 ? (
+                  paginatedOperators.map((operator) => (
+                    <tr key={operator.id} className="border-b border-gray-200 hover:bg-gray-50">
+                      <td className="py-3 px-4">{operator.id}</td>
+                      <td className="py-3 px-4">{operator.name}</td>
+                      <td className="py-3 px-4">{operator.cargo || "-"}</td>
+                      <td className="py-3 px-4">{operator.setor || "-"}</td>
+                      <td className="py-3 px-4 text-center">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="mr-2"
+                          onClick={() => openEditDialog(operator)}
+                        >
+                          Editar
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600"
+                          onClick={() => handleRemoveOperator(operator.id)}
+                        >
+                          Remover
+                        </Button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="text-center py-8">
+                      {operators.length === 0 
+                        ? "Nenhum operador cadastrado ainda." 
+                        : "Nenhum operador encontrado com a busca atual."}
                     </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
