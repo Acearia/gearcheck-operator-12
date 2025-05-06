@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -328,6 +327,12 @@ const AdminChecklistsOverview = () => {
     });
   };
 
+  const viewInspectionDetail = (inspectionId: string) => {
+    if (inspectionId) {
+      navigate(`/admin/checklists/${inspectionId}`);
+    }
+  };
+
   return (
     <div className="space-y-6 p-2">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
@@ -413,7 +418,8 @@ const AdminChecklistsOverview = () => {
                         {groupedInspections[sector]?.[bridge]?.slice(0, 10).map((inspection, index) => (
                           <div 
                             key={`${inspection.id}-${index}`}
-                            className={`p-2 flex items-center gap-2 text-sm ${getStatusClass(inspection)}`}
+                            className={`p-2 flex items-center gap-2 text-sm ${getStatusClass(inspection)} hover:bg-gray-100 cursor-pointer`}
+                            onClick={() => viewInspectionDetail(inspection.id)}
                           >
                             <Badge variant="outline" className="min-w-[100px] flex justify-center">
                               {formatDate(inspection.submissionDate).split(' ')[0]}

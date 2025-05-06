@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -401,6 +400,12 @@ const LeaderDashboard = () => {
     }
   };
 
+  const viewInspectionDetail = (inspectionId: string) => {
+    if (inspectionId) {
+      navigate(`/leader/checklists/${inspectionId}`);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -685,6 +690,7 @@ const LeaderDashboard = () => {
                         <TableHead>Equipamento</TableHead>
                         <TableHead>Operador</TableHead>
                         <TableHead>Status</TableHead>
+                        <TableHead>Ações</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -692,7 +698,7 @@ const LeaderDashboard = () => {
                         const hasProblems = inspection.checklist.some(item => item.answer === 'Não');
                         
                         return (
-                          <TableRow key={index}>
+                          <TableRow key={index} className="hover:bg-gray-50 cursor-pointer">
                             <TableCell>
                               {new Date(inspection.submissionDate).toLocaleDateString()}
                             </TableCell>
@@ -711,6 +717,18 @@ const LeaderDashboard = () => {
                                   Sem problemas
                                 </span>
                               )}
+                            </TableCell>
+                            <TableCell>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  viewInspectionDetail(inspection.id);
+                                }}
+                              >
+                                Visualizar
+                              </Button>
                             </TableCell>
                           </TableRow>
                         );
