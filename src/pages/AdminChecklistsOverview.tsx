@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
@@ -8,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Calendar, Clock, Save, History, User } from "lucide-react";
+import { Plus, Calendar, Clock, Save, History, User, Calendar as CalendarIcon, Shield, ShieldAlert } from "lucide-react";
 import { 
   Dialog,
   DialogContent,
@@ -54,6 +55,8 @@ interface Inspection {
   submissionDate: string;
   answers: Record<string, boolean>;
   observations: string;
+  hasMaintenanceOrder?: boolean;
+  maintenanceOrderClosed?: boolean;
 }
 
 interface ScheduledInspection {
@@ -76,6 +79,11 @@ const scheduleFormSchema = z.object({
   frequency: z.enum(["daily", "weekly", "monthly"]),
   active: z.boolean(),
   days: z.array(z.string()).optional(),
+});
+
+const leaderAssignmentSchema = z.object({
+  leaderId: z.string().min(1, "Selecione um líder"),
+  sectorName: z.string().min(1, "Setor é obrigatório")
 });
 
 const sectorColors: Record<string, string> = {
@@ -116,6 +124,8 @@ const AdminChecklistsOverview = () => {
   const [leadersList, setLeadersList] = useState<{id: string, name: string, email: string}[]>([]);
   const [assignLeaderDialogOpen, setAssignLeaderDialogOpen] = useState(false);
   const [selectedSector, setSelectedSector] = useState<string>("");
+  const [maintenanceDialogOpen, setMaintenanceDialogOpen] = useState(false);
+  const [selectedInspection, setSelectedInspection] = useState<Inspection | null>(null);
 
   const form = useForm<z.infer<typeof scheduleFormSchema>>({
     resolver: zodResolver(scheduleFormSchema),
@@ -125,6 +135,14 @@ const AdminChecklistsOverview = () => {
       frequency: "daily",
       active: true,
       days: ["mon", "tue", "wed", "thu", "fri"],
+    },
+  });
+  
+  const leaderAssignmentForm = useForm<z.infer<typeof leaderAssignmentSchema>>({
+    resolver: zodResolver(leaderAssignmentSchema),
+    defaultValues: {
+      leaderId: "",
+      sectorName: "",
     },
   });
 
@@ -206,6 +224,15 @@ const AdminChecklistsOverview = () => {
         const storedLeaders = localStorage.getItem('gearcheck-leaders');
         if (storedLeaders) {
           setLeadersList(JSON.parse(storedLeaders));
+        } else {
+          // Create sample leaders if none exist
+          const sampleLeaders = [
+            { id: "leader1", name: "João Silva", email: "joao@example.com" },
+            { id: "leader2", name: "Maria Oliveira", email: "maria@example.com" },
+            { id: "leader3", name: "Carlos Santos", email: "carlos@example.com" },
+          ];
+          localStorage.setItem('gearcheck-leaders', JSON.stringify(sampleLeaders));
+          setLeadersList(sampleLeaders);
         }
       } catch (error) {
         console.error('Erro ao carregar dados:', error);
@@ -228,12 +255,38 @@ const AdminChecklistsOverview = () => {
     const isToday = new Date(inspection.submissionDate).toDateString() === new Date().toDateString();
     
     if (allOK && isToday) {
-      return "bg-green-100";
+      return "bg-green-100"; // OK hoje
     } else if (!allOK && isToday) {
-      return "bg-red-100";
+      if (inspection.hasMaintenanceOrder) {
+        return "bg-yellow-100"; // NOK com OS
+      }
+      return "bg-red-100"; // NOK hoje
+    } else if (!allOK) {
+      if (inspection.hasMaintenanceOrder) {
+        return "bg-yellow-50"; // NOK com OS (não hoje)
+      }
+      return "bg-red-50"; // NOK não hoje
     }
     
     return ""; // default
+  };
+
+  const getStatusDot = (inspection: Inspection) => {
+    // Check if all answers are true (OK)
+    const allOK = Object.values(inspection.answers).every(answer => answer === true);
+    
+    if (allOK) {
+      return null; // No dot for OK
+    }
+    
+    if (inspection.hasMaintenanceOrder) {
+      if (inspection.maintenanceOrderClosed) {
+        return <span className="w-2 h-2 rounded-full bg-green-500 inline-block mr-1"></span>;
+      }
+      return <span className="w-2 h-2 rounded-full bg-yellow-500 inline-block mr-1"></span>;
+    }
+    
+    return <span className="w-2 h-2 rounded-full bg-red-500 inline-block mr-1"></span>;
   };
 
   const formatDate = (dateString: string) => {
@@ -369,7 +422,7 @@ const AdminChecklistsOverview = () => {
     setAssignLeaderDialogOpen(true);
   };
 
-  const saveLeaderAssignment = (values: any) => {
+  const saveLeaderAssignment = (values: z.infer<typeof leaderAssignmentSchema>) => {
     try {
       const newAssignments = [...leaderAssignments];
       const existingIndex = newAssignments.findIndex(a => a.sectorName === values.sectorName);
@@ -415,8 +468,70 @@ const AdminChecklistsOverview = () => {
     return leader ? leader.name : "Não encontrado";
   };
 
+  const handleOpenMaintenanceDialog = (inspection: Inspection) => {
+    setSelectedInspection(inspection);
+    setMaintenanceDialogOpen(true);
+  };
+
+  const toggleMaintenanceOrder = (hasOrder: boolean, closed: boolean = false) => {
+    if (!selectedInspection) return;
+
+    const updatedInspections = inspections.map(inspection => {
+      if (inspection.id === selectedInspection.id) {
+        return {
+          ...inspection,
+          hasMaintenanceOrder: hasOrder,
+          maintenanceOrderClosed: closed
+        };
+      }
+      return inspection;
+    });
+
+    setInspections(updatedInspections);
+    localStorage.setItem('gearcheck-inspections', JSON.stringify(updatedInspections));
+    
+    // Update groupedInspections
+    const sector = selectedInspection.equipment.sector;
+    const bridge = selectedInspection.equipment.bridgeNumber || selectedInspection.equipment.id;
+    
+    if (groupedInspections[sector] && groupedInspections[sector][bridge]) {
+      const updatedGroup = { ...groupedInspections };
+      updatedGroup[sector][bridge] = updatedGroup[sector][bridge].map(insp => {
+        if (insp.id === selectedInspection.id) {
+          return {
+            ...insp,
+            hasMaintenanceOrder: hasOrder,
+            maintenanceOrderClosed: closed
+          };
+        }
+        return insp;
+      });
+      
+      setGroupedInspections(updatedGroup);
+    }
+    
+    setMaintenanceDialogOpen(false);
+    
+    if (hasOrder && !closed) {
+      toast({
+        title: "OS Registrada",
+        description: "Ordem de serviço registrada com sucesso"
+      });
+    } else if (closed) {
+      toast({
+        title: "OS Finalizada",
+        description: "Ordem de serviço finalizada com sucesso"
+      });
+    } else {
+      toast({
+        title: "OS Removida",
+        description: "Ordem de serviço removida com sucesso"
+      });
+    }
+  };
+
   return (
-    <div className="space-y-6 p-2">
+    <div className="space-y-6 p-2 pb-10">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Visão de Checklists</h1>
@@ -475,97 +590,116 @@ const AdminChecklistsOverview = () => {
         </CardContent>
       </Card>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="w-full overflow-x-auto flex h-auto p-0 bg-transparent border-b border-gray-200">
-          {sectors.map(sector => (
-            <TabsTrigger 
-              key={sector} 
-              value={sector} 
-              className={`px-4 py-2 data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-blue-600 data-[state=active]:rounded-none data-[state=active]:shadow-none`}
-            >
-              {sector}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-
-        {sectors.map(sector => (
-          <TabsContent key={sector} value={sector} className="mt-4">
-            <div className="flex justify-between items-center mb-4">
-              <div className="flex items-center gap-2">
-                <User size={18} className="text-gray-600" />
-                <span className="text-sm text-gray-600">
-                  Líder: <span className="font-semibold">{getSectorLeaderName(sector)}</span>
-                </span>
-              </div>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => handleOpenAssignLeaderDialog(sector)}
-              >
-                Atribuir Líder
-              </Button>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
-              {bridges[sector]?.map(bridge => (
-                <Card key={bridge} className="overflow-hidden">
-                  <CardHeader className={`${sectorColors[sector] || 'bg-gray-100'} py-2 px-4`}>
-                    <CardTitle className="text-md font-semibold">Ponte {bridge}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                    <ScrollArea className="h-60">
-                      <div className="flex flex-col divide-y">
-                        {groupedInspections[sector]?.[bridge]?.slice(0, 10).map((inspection, index) => (
-                          <div 
-                            key={`${inspection.id}-${index}`}
-                            className={`p-2 flex items-center gap-2 text-sm ${getStatusClass(inspection)} hover:bg-gray-100 cursor-pointer`}
-                            onClick={() => viewInspectionDetail(inspection.id)}
-                          >
-                            <Badge variant="outline" className="min-w-[100px] flex justify-center">
-                              {formatDate(inspection.submissionDate).split(' ')[0]}
-                            </Badge>
-                            <span className="text-xs text-gray-600">
-                              {formatDate(inspection.submissionDate).split(' ')[1]}
-                            </span>
-                            
-                            {Object.values(inspection.answers).every(answer => answer === true) ? (
-                              <Badge className="bg-green-500 hover:bg-green-600 ml-auto">OK</Badge>
-                            ) : (
-                              <Badge className="bg-red-500 hover:bg-red-600 ml-auto">NOK</Badge>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </ScrollArea>
-                  </CardContent>
-                </Card>
+      <Card className="bg-white shadow-md">
+        <CardHeader className="bg-blue-700 text-white pb-2 pt-3">
+          <CardTitle className="text-lg flex items-center justify-between">
+            <span>Todos os Check lists</span>
+          </CardTitle>
+        </CardHeader>
+        
+        <CardContent className="p-0">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="flex w-full h-auto bg-gray-100 p-0 overflow-x-auto">
+              {sectors.map(sector => (
+                <TabsTrigger 
+                  key={sector} 
+                  value={sector}
+                  className="px-6 py-3 flex-1 data-[state=active]:bg-white data-[state=active]:border-t-2 data-[state=active]:border-blue-600 rounded-none flex justify-center"
+                >
+                  <div className="flex flex-col items-center">
+                    <span className="font-medium">{sector}</span>
+                    <span className="text-xs text-gray-500">Líder: {getSectorLeaderName(sector)}</span>
+                  </div>
+                </TabsTrigger>
               ))}
-            </div>
-          </TabsContent>
-        ))}
-      </Tabs>
+            </TabsList>
 
-      <div className="mt-4">
-        <h2 className="text-sm font-semibold mb-2">Legenda</h2>
-        <div className="flex flex-wrap gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-green-100 border border-green-300"></div>
-            <span className="text-sm">Check list "OK" hoje</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-red-100 border border-red-300"></div>
-            <span className="text-sm">Check list "NOK" hoje</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Badge className="bg-green-500 hover:bg-green-600">OK</Badge>
-            <span className="text-sm">Todas verificações aprovadas</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Badge className="bg-red-500 hover:bg-red-600">NOK</Badge>
-            <span className="text-sm">Alguma verificação reprovada</span>
+            {sectors.map(sector => (
+              <TabsContent key={sector} value={sector} className="m-0 p-0">
+                <div className="p-2 flex justify-end">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => handleOpenAssignLeaderDialog(sector)}
+                  >
+                    <User size={14} className="mr-1" />
+                    Atribuir Líder
+                  </Button>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-4">
+                  {bridges[sector]?.map(bridge => (
+                    <Card key={bridge} className="shadow-sm">
+                      <CardHeader className="py-2 px-4 bg-gray-50 border-b">
+                        <CardTitle className="text-md font-semibold">Ponte {bridge}</CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-0">
+                        <div className="flex flex-col">
+                          {groupedInspections[sector]?.[bridge]?.slice(0, 10).map((inspection, index) => (
+                            <div 
+                              key={`${inspection.id}-${index}`}
+                              className={`p-2 border-b flex items-center text-sm ${getStatusClass(inspection)} hover:bg-gray-50 cursor-pointer`}
+                              onClick={() => viewInspectionDetail(inspection.id)}
+                              onContextMenu={(e) => {
+                                e.preventDefault();
+                                handleOpenMaintenanceDialog(inspection);
+                              }}
+                            >
+                              {getStatusDot(inspection)}
+                              <span className="ml-1">{formatDate(inspection.submissionDate).replace(' ', ' ')}</span>
+                              
+                              {inspection.hasMaintenanceOrder && (
+                                <Badge 
+                                  variant="outline" 
+                                  className={`ml-auto text-xs ${inspection.maintenanceOrderClosed ? 'bg-green-50 text-green-700 border-green-200' : 'bg-yellow-50 text-yellow-700 border-yellow-200'}`}
+                                >
+                                  {inspection.maintenanceOrderClosed ? (
+                                    <span className="flex items-center">
+                                      <Shield size={12} className="mr-1" />
+                                      OS Fechada
+                                    </span>
+                                  ) : (
+                                    <span className="flex items-center">
+                                      <ShieldAlert size={12} className="mr-1" />
+                                      OS Aberta
+                                    </span>
+                                  )}
+                                </Badge>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </TabsContent>
+            ))}
+          </Tabs>
+        </CardContent>
+        
+        <div className="p-4 border-t">
+          <h2 className="text-sm font-semibold mb-2">Legenda</h2>
+          <div className="flex flex-wrap gap-4">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-green-100 border border-green-300"></div>
+              <span className="text-sm">Check list "OK" hoje</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-red-100 border border-red-300"></div>
+              <span className="text-sm">Check list "NOK" hoje</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-yellow-100 border border-yellow-300"></div>
+              <span className="text-sm">Check list "NOK" com OS</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+              <span className="text-sm">Check list "NOK" sem OS</span>
+            </div>
           </div>
         </div>
-      </div>
+      </Card>
 
       <Dialog open={scheduleDialogOpen} onOpenChange={setScheduleDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
@@ -766,6 +900,64 @@ const AdminChecklistsOverview = () => {
               </DialogFooter>
             </form>
           </Form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={maintenanceDialogOpen} onOpenChange={setMaintenanceDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Gerenciar Ordem de Serviço</DialogTitle>
+            <DialogDescription>
+              {selectedInspection && (
+                <span>
+                  Equipamento: {selectedInspection.equipment.name} - 
+                  Ponte: {selectedInspection.equipment.bridgeNumber || 'N/A'} - 
+                  Data: {formatDate(selectedInspection.submissionDate)}
+                </span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <p className="text-sm text-muted-foreground">
+              Selecione uma ação para a ordem de serviço deste checklist:
+            </p>
+            
+            <div className="flex flex-col space-y-2">
+              <Button 
+                variant="outline" 
+                className={`justify-start ${selectedInspection?.hasMaintenanceOrder && !selectedInspection?.maintenanceOrderClosed ? 'border-yellow-500 bg-yellow-50' : ''}`}
+                onClick={() => toggleMaintenanceOrder(true, false)}
+              >
+                <ShieldAlert className="mr-2 h-4 w-4 text-yellow-500" />
+                Registrar OS Aberta
+              </Button>
+              
+              <Button 
+                variant="outline" 
+                className={`justify-start ${selectedInspection?.hasMaintenanceOrder && selectedInspection?.maintenanceOrderClosed ? 'border-green-500 bg-green-50' : ''}`}
+                onClick={() => toggleMaintenanceOrder(true, true)}
+              >
+                <Shield className="mr-2 h-4 w-4 text-green-500" />
+                Marcar OS como Fechada
+              </Button>
+              
+              <Button 
+                variant="outline" 
+                className={`justify-start ${!selectedInspection?.hasMaintenanceOrder ? 'border-gray-300 bg-gray-50' : ''}`}
+                onClick={() => toggleMaintenanceOrder(false)}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4 text-gray-500" />
+                Remover OS (Sem Manutenção)
+              </Button>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setMaintenanceDialogOpen(false)}>
+              Cancelar
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
