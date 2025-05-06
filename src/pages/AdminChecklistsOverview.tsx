@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Calendar, Clock, Save } from "lucide-react";
+import { Plus, Calendar, Clock, Save, History, User } from "lucide-react";
 import { 
   Dialog,
   DialogContent,
@@ -16,7 +16,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -66,6 +65,11 @@ interface ScheduledInspection {
   days: string[]; // Days of the week for weekly frequency
 }
 
+interface LeaderAssignment {
+  leaderId: string;
+  sectorName: string;
+}
+
 const scheduleFormSchema = z.object({
   equipmentId: z.string().min(1, "Selecione um equipamento"),
   scheduleTime: z.string().min(1, "Horário é obrigatório"),
@@ -108,6 +112,10 @@ const AdminChecklistsOverview = () => {
   const [scheduledInspections, setScheduledInspections] = useState<ScheduledInspection[]>([]);
   const [editSchedule, setEditSchedule] = useState<ScheduledInspection | null>(null);
   const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
+  const [leaderAssignments, setLeaderAssignments] = useState<LeaderAssignment[]>([]);
+  const [leadersList, setLeadersList] = useState<{id: string, name: string, email: string}[]>([]);
+  const [assignLeaderDialogOpen, setAssignLeaderDialogOpen] = useState(false);
+  const [selectedSector, setSelectedSector] = useState<string>("");
 
   const form = useForm<z.infer<typeof scheduleFormSchema>>({
     resolver: zodResolver(scheduleFormSchema),
@@ -186,6 +194,18 @@ const AdminChecklistsOverview = () => {
         const storedSchedules = localStorage.getItem('gearcheck-scheduled-inspections');
         if (storedSchedules) {
           setScheduledInspections(JSON.parse(storedSchedules));
+        }
+
+        // Load leader assignments
+        const storedLeaderAssignments = localStorage.getItem('gearcheck-leader-assignments');
+        if (storedLeaderAssignments) {
+          setLeaderAssignments(JSON.parse(storedLeaderAssignments));
+        }
+
+        // Load leaders list
+        const storedLeaders = localStorage.getItem('gearcheck-leaders');
+        if (storedLeaders) {
+          setLeadersList(JSON.parse(storedLeaders));
         }
       } catch (error) {
         console.error('Erro ao carregar dados:', error);
@@ -335,6 +355,66 @@ const AdminChecklistsOverview = () => {
     }
   };
 
+  const handleOpenAssignLeaderDialog = (sector: string) => {
+    setSelectedSector(sector);
+    
+    // Check if sector already has a leader assigned
+    const existingAssignment = leaderAssignments.find(a => a.sectorName === sector);
+    
+    leaderAssignmentForm.reset({
+      leaderId: existingAssignment?.leaderId || "",
+      sectorName: sector,
+    });
+    
+    setAssignLeaderDialogOpen(true);
+  };
+
+  const saveLeaderAssignment = (values: any) => {
+    try {
+      const newAssignments = [...leaderAssignments];
+      const existingIndex = newAssignments.findIndex(a => a.sectorName === values.sectorName);
+      
+      if (existingIndex >= 0) {
+        // Update existing assignment
+        newAssignments[existingIndex] = {
+          leaderId: values.leaderId,
+          sectorName: values.sectorName
+        };
+      } else {
+        // Add new assignment
+        newAssignments.push({
+          leaderId: values.leaderId,
+          sectorName: values.sectorName
+        });
+      }
+      
+      setLeaderAssignments(newAssignments);
+      localStorage.setItem('gearcheck-leader-assignments', JSON.stringify(newAssignments));
+      
+      toast({
+        title: "Líder atribuído",
+        description: `Líder atribuído ao setor ${values.sectorName} com sucesso!`
+      });
+      
+      setAssignLeaderDialogOpen(false);
+    } catch (error) {
+      console.error('Erro ao salvar atribuição de líder:', error);
+      toast({
+        title: "Erro ao salvar",
+        description: "Não foi possível atribuir o líder ao setor.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const getSectorLeaderName = (sectorName: string) => {
+    const assignment = leaderAssignments.find(a => a.sectorName === sectorName);
+    if (!assignment) return "Não atribuído";
+    
+    const leader = leadersList.find(l => l.id === assignment.leaderId);
+    return leader ? leader.name : "Não encontrado";
+  };
+
   return (
     <div className="space-y-6 p-2">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
@@ -342,10 +422,12 @@ const AdminChecklistsOverview = () => {
           <h1 className="text-2xl font-bold tracking-tight">Visão de Checklists</h1>
           <p className="text-muted-foreground">Monitoramento de checklists por setor e ponte</p>
         </div>
-        <Button onClick={() => handleOpenScheduleDialog()}>
-          <Plus size={16} className="mr-2" />
-          Agendar Inspeção
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={() => handleOpenScheduleDialog()}>
+            <Plus size={16} className="mr-2" />
+            Agendar Inspeção
+          </Button>
+        </div>
       </div>
 
       <Card className="mb-6">
@@ -408,6 +490,22 @@ const AdminChecklistsOverview = () => {
 
         {sectors.map(sector => (
           <TabsContent key={sector} value={sector} className="mt-4">
+            <div className="flex justify-between items-center mb-4">
+              <div className="flex items-center gap-2">
+                <User size={18} className="text-gray-600" />
+                <span className="text-sm text-gray-600">
+                  Líder: <span className="font-semibold">{getSectorLeaderName(sector)}</span>
+                </span>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => handleOpenAssignLeaderDialog(sector)}
+              >
+                Atribuir Líder
+              </Button>
+            </div>
+            
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
               {bridges[sector]?.map(bridge => (
                 <Card key={bridge} className="overflow-hidden">
@@ -613,6 +711,57 @@ const AdminChecklistsOverview = () => {
                 <Button type="submit">
                   <Save className="mr-2 h-4 w-4" />
                   {editSchedule ? 'Atualizar' : 'Salvar'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={assignLeaderDialogOpen} onOpenChange={setAssignLeaderDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Atribuir Líder ao Setor {selectedSector}</DialogTitle>
+            <DialogDescription>
+              Selecione um líder para gerenciar este setor e suas inspeções
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Form {...leaderAssignmentForm}>
+            <form onSubmit={leaderAssignmentForm.handleSubmit(saveLeaderAssignment)} className="space-y-6">
+              <FormField
+                control={leaderAssignmentForm.control}
+                name="leaderId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Líder</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione um líder" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {leadersList.map(leader => (
+                          <SelectItem key={leader.id} value={leader.id}>
+                            {leader.name} ({leader.email})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setAssignLeaderDialogOpen(false)}>Cancelar</Button>
+                <Button type="submit">
+                  <Save className="mr-2 h-4 w-4" />
+                  Salvar
                 </Button>
               </DialogFooter>
             </form>
