@@ -23,6 +23,7 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<Index />} />
+        <Route path="/checklist" element={<Checklist />} />
         <Route path="/checklist/:equipmentId" element={<Checklist />} />
         
         <Route path="/leader/login" element={<LeaderLogin />} />
