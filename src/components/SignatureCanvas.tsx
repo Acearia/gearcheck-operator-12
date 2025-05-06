@@ -1,13 +1,13 @@
-
 import React, { useRef, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Pen, Trash2 } from "lucide-react";
 
 interface SignatureCanvasProps {
-  onSignatureChange: (signature: string | null) => void;
+  onSignatureChange?: (signature: string | null) => void;
+  onSave?: (signature: string) => void;
 }
 
-const SignatureCanvas: React.FC<SignatureCanvasProps> = ({ onSignatureChange }) => {
+const SignatureCanvas: React.FC<SignatureCanvasProps> = ({ onSignatureChange, onSave }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasSignature, setHasSignature] = useState(false);
@@ -123,7 +123,14 @@ const SignatureCanvas: React.FC<SignatureCanvasProps> = ({ onSignatureChange }) 
     
     // Capture the signature as a data URL and pass to parent
     const signatureData = canvas.toDataURL("image/png");
-    onSignatureChange(signatureData);
+    
+    if (onSignatureChange) {
+      onSignatureChange(signatureData);
+    }
+    
+    if (onSave) {
+      onSave(signatureData);
+    }
   };
 
   const clearSignature = () => {
@@ -135,7 +142,10 @@ const SignatureCanvas: React.FC<SignatureCanvasProps> = ({ onSignatureChange }) 
     
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     setHasSignature(false);
-    onSignatureChange(null);
+    
+    if (onSignatureChange) {
+      onSignatureChange(null);
+    }
   };
 
   return (

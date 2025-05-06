@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { format } from "date-fns";
@@ -457,7 +456,7 @@ const ChecklistDetail = () => {
           </DialogHeader>
           
           <div className="my-4">
-            <SignatureCanvas onSave={handleSignatureSave} />
+            <SignatureCanvas onSignatureChange={handleSignatureSave} />
           </div>
           
           <DialogFooter>

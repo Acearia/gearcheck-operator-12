@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -97,6 +98,7 @@ const weekDays = [
 
 const AdminChecklistsOverview = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [inspections, setInspections] = useState<Inspection[]>([]);
   const [sectors, setSectors] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<string>("");
