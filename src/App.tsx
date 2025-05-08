@@ -10,7 +10,7 @@ import AdminOperators from "./pages/AdminOperators";
 import AdminEquipment from "./pages/AdminEquipment";
 import AdminInspections from "./pages/AdminInspections";
 import AdminChecklistsOverview from "./pages/AdminChecklistsOverview";
-import AdminLeaderDashboard from "./pages/AdminLeaderDashboard"; // Adicionando a página de líderes
+import AdminLeaderDashboard from "./pages/AdminLeaderDashboard"; 
 import AdminSettings from "./pages/AdminSettings";
 import AdminReports from "./pages/AdminReports";
 import LeaderLogin from "./pages/LeaderLogin";
@@ -50,7 +50,7 @@ function App() {
           <Route path="equipment" element={<AdminEquipment />} />
           <Route path="inspections" element={<AdminInspections />} />
           <Route path="checklists" element={<AdminChecklistsOverview />} />
-          <Route path="leaders" element={<AdminLeaderDashboard />} /> {/* Nova rota para página de líderes */}
+          <Route path="leaders" element={<AdminLeaderDashboard />} />
           <Route path="checklists/:id" element={<ChecklistDetail />} />
           <Route path="settings" element={<AdminSettings />} />
           <Route path="reports" element={<AdminReports />} />
