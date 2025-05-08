@@ -16,6 +16,11 @@ import LeaderLogin from "./pages/LeaderLogin";
 import LeaderDashboard from "./pages/LeaderDashboard";
 import DatabaseConnection from "./pages/DatabaseConnection";
 import ChecklistDetail from "./pages/ChecklistDetail";
+import ChecklistOperator from "./pages/checklist/ChecklistOperator";
+import ChecklistEquipment from "./pages/checklist/ChecklistEquipment";
+import ChecklistItems from "./pages/checklist/ChecklistItems";
+import ChecklistMedia from "./pages/checklist/ChecklistMedia";
+import ChecklistSubmit from "./pages/checklist/ChecklistSubmit";
 import "./App.css";
 
 function App() {
@@ -25,6 +30,13 @@ function App() {
         <Route path="/" element={<Index />} />
         <Route path="/checklist" element={<Checklist />} />
         <Route path="/checklist/:equipmentId" element={<Checklist />} />
+        
+        {/* Novas rotas para o checklist dividido em etapas */}
+        <Route path="/checklist-steps/operator" element={<ChecklistOperator />} />
+        <Route path="/checklist-steps/equipment" element={<ChecklistEquipment />} />
+        <Route path="/checklist-steps/items" element={<ChecklistItems />} />
+        <Route path="/checklist-steps/media" element={<ChecklistMedia />} />
+        <Route path="/checklist-steps/submit" element={<ChecklistSubmit />} />
         
         <Route path="/leader/login" element={<LeaderLogin />} />
         <Route path="/leader/dashboard" element={<LeaderDashboard />} />

@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Link } from "react-router-dom";
-import { ClipboardCheck, Settings, Briefcase } from "lucide-react";
+import { ClipboardCheck, Settings, Briefcase, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -38,14 +38,25 @@ const Index = () => {
                   <p className="text-gray-600">Sistema de inspeção de equipamentos</p>
                 </div>
                 
-                <Link to="/checklist" className="w-full">
-                  <Button 
-                    className="w-full py-8 bg-red-700 hover:bg-red-800 text-white text-lg flex flex-col items-center gap-2"
-                  >
-                    <ClipboardCheck size={48} />
-                    <span>Iniciar Checklist</span>
-                  </Button>
-                </Link>
+                <div className="w-full space-y-4">
+                  <Link to="/checklist" className="w-full">
+                    <Button 
+                      className="w-full py-6 bg-red-700 hover:bg-red-800 text-white text-lg flex flex-col items-center gap-2"
+                    >
+                      <ClipboardCheck size={40} />
+                      <span>Iniciar Checklist (Página Única)</span>
+                    </Button>
+                  </Link>
+                  
+                  <Link to="/checklist-steps/operator" className="w-full">
+                    <Button 
+                      className="w-full py-6 bg-green-700 hover:bg-green-800 text-white text-lg flex flex-col items-center gap-2"
+                    >
+                      <List size={40} />
+                      <span>Iniciar Checklist em Etapas</span>
+                    </Button>
+                  </Link>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
