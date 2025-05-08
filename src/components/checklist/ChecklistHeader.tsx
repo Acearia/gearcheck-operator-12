@@ -8,20 +8,22 @@ interface ChecklistHeaderProps {
   showDebug?: boolean;
   onToggleDebug?: () => void;
   onAddOperator?: () => void;
+  title?: string;
 }
 
 const ChecklistHeader: React.FC<ChecklistHeaderProps> = ({ 
   backUrl = "/", 
   showDebug = false,
   onToggleDebug,
-  onAddOperator
+  onAddOperator,
+  title = "Checklist - AFM"
 }) => {
   return (
     <header className="bg-red-700 text-white px-4 py-3 shadow-md flex justify-between items-center">
       <Link to={backUrl} className="text-white">
         <ArrowLeft size={24} />
       </Link>
-      <h1 className="font-bold text-lg">Checklist - AFM</h1>
+      <h1 className="font-bold text-lg">{title}</h1>
       <div className="flex items-center space-x-2">
         {onToggleDebug && (
           <button 
