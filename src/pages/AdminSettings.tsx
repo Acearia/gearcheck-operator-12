@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,7 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Save, KeyRound, Bell, Database, Shield, Server, AlertCircle, Briefcase } from "lucide-react";
+import { Save, KeyRound, Bell, Database, Shield, Server, AlertCircle, Briefcase, ExternalLink } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Link } from "react-router-dom";
 
@@ -475,11 +476,19 @@ const AdminSettings = () => {
         
         <TabsContent value="leaders">
           <Card>
-            <CardHeader>
-              <CardTitle>Gerenciar Líderes de Setor</CardTitle>
-              <CardDescription>
-                Adicione ou remova acesso dos líderes de setor
-              </CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Gerenciar Líderes de Setor</CardTitle>
+                <CardDescription>
+                  Adicione ou remova acesso dos líderes de setor
+                </CardDescription>
+              </div>
+              <Button variant="outline" asChild>
+                <Link to="/admin/leaders" className="flex items-center gap-2">
+                  <ExternalLink className="h-4 w-4" />
+                  Ver Painel Completo
+                </Link>
+              </Button>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-4">
