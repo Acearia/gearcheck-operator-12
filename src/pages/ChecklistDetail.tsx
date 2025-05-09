@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { format } from "date-fns";
@@ -239,8 +240,15 @@ const ChecklistDetail = () => {
     );
   }
   
-  const hasAllAnswers = inspection.checklist.every(item => item.answer !== "");
-  const hasIssues = inspection.checklist.some(item => item.answer === "Não");
+  // Add safe check for inspection.checklist before accessing .every method
+  const hasAllAnswers = inspection.checklist && inspection.checklist.length > 0 
+    ? inspection.checklist.every(item => item.answer !== "") 
+    : false;
+    
+  // Also add safe check for inspection.checklist before accessing .some method  
+  const hasIssues = inspection.checklist && inspection.checklist.length > 0
+    ? inspection.checklist.some(item => item.answer === "Não")
+    : false;
   
   return (
     <div className="container max-w-4xl mx-auto p-4">
@@ -357,7 +365,7 @@ const ChecklistDetail = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {inspection.checklist.map((item) => (
+                {inspection.checklist && inspection.checklist.map((item) => (
                   <TableRow 
                     key={item.id}
                     className={item.answer === "Não" ? "bg-red-50" : ""}

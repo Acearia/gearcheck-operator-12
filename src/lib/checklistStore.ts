@@ -41,7 +41,12 @@ export const getChecklistState = (): ChecklistFormState => {
   }
   
   try {
-    return JSON.parse(storedState);
+    const parsedState = JSON.parse(storedState);
+    // Ensure checklist is always an array even if it's missing in localStorage
+    if (!parsedState.checklist) {
+      parsedState.checklist = [];
+    }
+    return parsedState;
   } catch (e) {
     console.error('Error parsing checklist state:', e);
     return initialState;
@@ -63,7 +68,9 @@ export const isStepComplete = (step: 'operator' | 'equipment' | 'items' | 'media
     case 'equipment':
       return state.equipment !== null;
     case 'items':
-      return state.checklist.length > 0 && state.checklist.every(item => item.answer !== null && item.answer !== 'Selecione');
+      // Add null check for checklist array
+      return state.checklist && state.checklist.length > 0 && 
+             state.checklist.every(item => item.answer !== null && item.answer !== 'Selecione');
     case 'media':
       return true; // Fotos e comentários são opcionais
     case 'signature':
