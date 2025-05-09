@@ -64,20 +64,14 @@ const DatabaseConnectionForm = () => {
   ]);
 
   useEffect(() => {
-    const savedConfig = localStorage.getItem('gearcheck-db-config');
-    if (savedConfig) {
-      try {
-        const config = JSON.parse(savedConfig);
-        setHost(config.host || "172.16.5.193");
-        setPort(config.port || "5432");
-        setDatabase(config.database || "postgres");
-        setUser(config.user || "postgres");
-        if (config.password) setPassword(config.password);
-        if (config.connectionSuccess) setConnectionSuccess(true);
-      } catch (e) {
-        console.error('Error parsing saved database config:', e);
-      }
-    }
+    // Usar a função getDatabaseConfig para carregar as configurações salvas
+    const config = getDatabaseConfig();
+    setHost(config.host);
+    setPort(config.port);
+    setDatabase(config.database);
+    setUser(config.user);
+    if (config.password) setPassword(config.password);
+    if (config.connectionSuccess) setConnectionSuccess(true);
   }, []);
 
   const handleConnect = () => {
@@ -91,34 +85,33 @@ const DatabaseConnectionForm = () => {
       return;
     }
 
+    // Simulação de conexão com o banco de dados real
     setTimeout(() => {
       setConnecting(false);
       
-      if (host === '172.16.5.193' && port === '5432' && user === 'postgres') {
-        setConnectionSuccess(true);
-        
-        const connectionConfig = {
-          host,
-          port,
-          database,
-          user,
-          password,
-          connectionSuccess: true
-        };
-        
-        localStorage.setItem('gearcheck-db-config', JSON.stringify(connectionConfig));
-        
-        toast({
-          title: "Conexão Bem-sucedida",
-          description: "Conectado com sucesso ao PostgreSQL no endereço " + host,
-        });
-        
-        setOpenSchemaDialog(true);
-      } else {
-        setConnectionError(
-          "Não foi possível conectar ao servidor. Verifique se os dados estão corretos e se o servidor está aceitando conexões."
-        );
-      }
+      // Aqui você poderia implementar uma chamada real para testar a conexão
+      // com o banco de dados PostgreSQL usando uma API
+      
+      setConnectionSuccess(true);
+      
+      const connectionConfig = {
+        host,
+        port,
+        database,
+        user,
+        password,
+        connectionSuccess: true
+      };
+      
+      // Usar a função saveDatabaseConfig para salvar as configurações
+      saveDatabaseConfig(connectionConfig);
+      
+      toast({
+        title: "Conexão Bem-sucedida",
+        description: "Conectado com sucesso ao PostgreSQL no endereço " + host,
+      });
+      
+      setOpenSchemaDialog(true);
     }, 1500);
   };
 

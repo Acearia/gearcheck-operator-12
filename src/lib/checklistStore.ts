@@ -13,6 +13,7 @@ export interface ChecklistFormState {
 
 // Chave para armazenar no localStorage
 const CHECKLIST_STORE_KEY = 'gearcheck-current-checklist';
+const DB_CONFIG_KEY = 'gearcheck-db-config';
 
 // Estado inicial
 const initialState: ChecklistFormState = {
@@ -23,6 +24,49 @@ const initialState: ChecklistFormState = {
   comments: '',
   signature: null,
   inspectionDate: new Date().toISOString().split('T')[0],
+};
+
+// Interface para configuração do banco de dados
+export interface DatabaseConfig {
+  host: string;
+  port: string;
+  database: string;
+  user: string;
+  password: string;
+  connectionSuccess: boolean;
+}
+
+// Configuração padrão do banco de dados
+export const defaultDbConfig: DatabaseConfig = {
+  host: "172.16.5.193",
+  port: "5432",
+  database: "postgres",
+  user: "postgres",
+  password: "",
+  connectionSuccess: false
+};
+
+// Obter configuração do banco de dados
+export const getDatabaseConfig = (): DatabaseConfig => {
+  const storedConfig = localStorage.getItem(DB_CONFIG_KEY);
+  if (!storedConfig) {
+    return defaultDbConfig;
+  }
+  
+  try {
+    return JSON.parse(storedConfig);
+  } catch (e) {
+    console.error('Erro ao analisar configuração do banco de dados:', e);
+    return defaultDbConfig;
+  }
+};
+
+// Salvar configuração do banco de dados
+export const saveDatabaseConfig = (config: Partial<DatabaseConfig>): DatabaseConfig => {
+  const currentConfig = getDatabaseConfig();
+  const newConfig = { ...currentConfig, ...config };
+  localStorage.setItem(DB_CONFIG_KEY, JSON.stringify(newConfig));
+  return newConfig;
 };
 
 // Garantir que os dados iniciais sejam armazenados
@@ -48,6 +92,11 @@ export const initializeDefaultData = () => {
   // Verificar o estado atual do checklist
   if (!localStorage.getItem(CHECKLIST_STORE_KEY)) {
     localStorage.setItem(CHECKLIST_STORE_KEY, JSON.stringify(initialState));
+  }
+  
+  // Verificar configuração do banco de dados
+  if (!localStorage.getItem(DB_CONFIG_KEY)) {
+    localStorage.setItem(DB_CONFIG_KEY, JSON.stringify(defaultDbConfig));
   }
 };
 
