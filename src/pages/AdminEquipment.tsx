@@ -7,6 +7,7 @@ import { equipments as initialEquipments, Equipment } from "@/lib/data";
 import { AddEquipmentDialog } from "@/components/equipment/AddEquipmentDialog";
 import { EditEquipmentDialog } from "@/components/equipment/EditEquipmentDialog";
 import { useToast } from "@/hooks/use-toast";
+import { initializeDefaultData } from "@/lib/checklistStore";
 import jsPDF from "jspdf";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -22,6 +23,12 @@ const AdminEquipment = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const { toast } = useToast();
+  
+  // Inicialização dos dados padrão
+  useEffect(() => {
+    // Garantir que os dados iniciais sejam carregados
+    initializeDefaultData();
+  }, []);
   
   // Load equipments from localStorage on component mount
   const loadEquipments = () => {

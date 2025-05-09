@@ -8,6 +8,7 @@ import { AddOperatorDialog } from "@/components/operators/AddOperatorDialog";
 import { EditOperatorDialog } from "@/components/operators/EditOperatorDialog";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
+import { initializeDefaultData } from "@/lib/checklistStore";
 import {
   Table,
   TableBody,
@@ -76,6 +77,12 @@ const AdminOperators = () => {
       });
     }
   };
+  
+  // Inicialização dos dados padrão
+  useEffect(() => {
+    // Garantir que os dados iniciais sejam carregados
+    initializeDefaultData();
+  }, []);
   
   // Load operators from localStorage on component mount
   useEffect(() => {

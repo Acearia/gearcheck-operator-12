@@ -25,6 +25,32 @@ const initialState: ChecklistFormState = {
   inspectionDate: new Date().toISOString().split('T')[0],
 };
 
+// Garantir que os dados iniciais sejam armazenados
+export const initializeDefaultData = () => {
+  const operatorsData = localStorage.getItem('gearcheck-operators');
+  const equipmentsData = localStorage.getItem('gearcheck-equipments');
+  
+  // Se não existirem operadores e equipamentos, importa dos dados iniciais
+  if (!operatorsData) {
+    import('./data').then(({ operators }) => {
+      localStorage.setItem('gearcheck-operators', JSON.stringify(operators));
+      console.log('Operadores inicializados com sucesso');
+    });
+  }
+  
+  if (!equipmentsData) {
+    import('./data').then(({ equipments }) => {
+      localStorage.setItem('gearcheck-equipments', JSON.stringify(equipments));
+      console.log('Equipamentos inicializados com sucesso');
+    });
+  }
+  
+  // Verificar o estado atual do checklist
+  if (!localStorage.getItem(CHECKLIST_STORE_KEY)) {
+    localStorage.setItem(CHECKLIST_STORE_KEY, JSON.stringify(initialState));
+  }
+};
+
 // Salvar o estado no localStorage
 export const saveChecklistState = (state: Partial<ChecklistFormState>) => {
   const currentState = getChecklistState();

@@ -16,7 +16,7 @@ import ChecklistHeader from "@/components/checklist/ChecklistHeader";
 import { ChecklistStepIndicator } from "@/components/checklist/ChecklistProgressBar";
 import { AddOperatorDialog } from "@/components/operators/AddOperatorDialog";
 import { operators as initialOperators, Operator } from "@/lib/data";
-import { getChecklistState, saveChecklistState } from "@/lib/checklistStore";
+import { getChecklistState, saveChecklistState, initializeDefaultData } from "@/lib/checklistStore";
 
 const ChecklistOperator = () => {
   const navigate = useNavigate();
@@ -32,6 +32,8 @@ const ChecklistOperator = () => {
 
   useEffect(() => {
     setIsLoadingData(true);
+    // Inicializar dados padrão
+    initializeDefaultData();
     checkDatabaseConnection();
     loadOperators();
     
