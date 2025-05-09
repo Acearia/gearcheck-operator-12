@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +12,15 @@ import { Save, KeyRound, Bell, Database, Shield, Server, AlertCircle, Briefcase,
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Link } from "react-router-dom";
 
+interface Leader {
+  id: string;
+  name: string;
+  email: string;
+  sector: string;
+  assignedOperators: string[];
+  assignedEquipments: string[];
+}
+
 const AdminSettings = () => {
   const { toast } = useToast();
   const [currentPassword, setCurrentPassword] = useState("");
@@ -23,23 +31,14 @@ const AdminSettings = () => {
   const [proxmoxOpen, setProxmoxOpen] = useState(false);
   const [testDbConnection, setTestDbConnection] = useState(false);
   const [dbConnectionResult, setDbConnectionResult] = useState("");
-  const [leaderSectors, setLeaderSectors] = useState({
-    'acabamento@example.com': {
-      sector: 'Acabamento',
-      password: '123456'
-    },
-    'usinagem@example.com': {
-      sector: 'Usinagem',
-      password: '123456'
-    },
-    'montagem@example.com': {
-      sector: 'Montagem',
-      password: '123456'
-    }
-  });
-  const [newLeaderEmail, setNewLeaderEmail] = useState('');
-  const [newLeaderSector, setNewLeaderSector] = useState('');
-  const [newLeaderPassword, setNewLeaderPassword] = useState('');
+  const [leaders, setLeaders] = useState<Leader[]>([]);
+  
+  useEffect(() => {
+    // Load leaders from localStorage to match AdminLeaderDashboard
+    const savedLeaders = localStorage.getItem('gearcheck-leaders');
+    const leadersList = savedLeaders ? JSON.parse(savedLeaders) : [];
+    setLeaders(leadersList);
+  }, []);
 
   const handleSavePassword = (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,44 +94,15 @@ const AdminSettings = () => {
     }, 2000);
   };
 
-  const handleAddLeader = (e: React.FormEvent) => {
-    e.preventDefault();
+  // Handle removal of leaders in settings (sync with main dashboard)
+  const handleRemoveLeader = (leaderId: string) => {
+    const updatedLeaders = leaders.filter(leader => leader.id !== leaderId);
+    setLeaders(updatedLeaders);
+    localStorage.setItem('gearcheck-leaders', JSON.stringify(updatedLeaders));
     
-    if (!newLeaderEmail || !newLeaderSector || !newLeaderPassword) {
-      toast({
-        title: "Erro",
-        description: "Todos os campos são obrigatórios",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setLeaderSectors(prev => ({
-      ...prev,
-      [newLeaderEmail]: {
-        sector: newLeaderSector,
-        password: newLeaderPassword
-      }
-    }));
-
-    setNewLeaderEmail('');
-    setNewLeaderSector('');
-    setNewLeaderPassword('');
-
-    toast({
-      title: "Líder Adicionado",
-      description: "Novo líder de setor foi adicionado com sucesso",
-    });
-  };
-
-  const handleRemoveLeader = (email: string) => {
-    const newLeaders = { ...leaderSectors };
-    delete newLeaders[email];
-    setLeaderSectors(newLeaders);
-
     toast({
       title: "Líder Removido",
-      description: "Líder de setor foi removido com sucesso",
+      description: "O líder foi removido com sucesso",
     });
   };
 
@@ -478,9 +448,9 @@ const AdminSettings = () => {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
-                <CardTitle>Gerenciar Líderes de Setor</CardTitle>
+                <CardTitle>Líderes Cadastrados</CardTitle>
                 <CardDescription>
-                  Adicione ou remova acesso dos líderes de setor
+                  Gerencie os líderes e suas atribuições de equipamentos e operadores
                 </CardDescription>
               </div>
               <Button variant="outline" asChild>
@@ -491,62 +461,53 @@ const AdminSettings = () => {
               </Button>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">Líderes Cadastrados</h3>
-                {Object.entries(leaderSectors).map(([email, data]) => (
-                  <div key={email} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div>
-                      <p className="font-medium">{email}</p>
-                      <p className="text-sm text-gray-500">Setor: {data.sector}</p>
-                    </div>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleRemoveLeader(email)}
+              {leaders.length === 0 ? (
+                <div className="text-center p-8 border rounded-md bg-gray-50">
+                  <Briefcase className="mx-auto h-8 w-8 text-gray-400" />
+                  <h3 className="mt-2 text-sm font-medium text-gray-900">Nenhum líder cadastrado</h3>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Adicione líderes no painel completo de gerenciamento de líderes
+                  </p>
+                  <div className="mt-6">
+                    <Button 
+                      asChild 
+                      className="flex items-center gap-2"
                     >
-                      Remover
+                      <Link to="/admin/leaders">
+                        <span className="h-4 w-4 flex items-center justify-center">+</span>
+                        Gerenciar Líderes
+                      </Link>
                     </Button>
                   </div>
-                ))}
-              </div>
-
-              <Separator />
-
-              <form onSubmit={handleAddLeader} className="space-y-4">
-                <h3 className="text-lg font-medium">Adicionar Novo Líder</h3>
-                <div className="space-y-2">
-                  <Label htmlFor="leader-email">Email do Setor</Label>
-                  <Input
-                    id="leader-email"
-                    type="email"
-                    placeholder="setor@exemplo.com"
-                    value={newLeaderEmail}
-                    onChange={(e) => setNewLeaderEmail(e.target.value)}
-                  />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="leader-sector">Nome do Setor</Label>
-                  <Input
-                    id="leader-sector"
-                    type="text"
-                    placeholder="Ex: Acabamento"
-                    value={newLeaderSector}
-                    onChange={(e) => setNewLeaderSector(e.target.value)}
-                  />
+              ) : (
+                <div className="space-y-4">
+                  {leaders.map((leader) => (
+                    <div key={leader.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div>
+                        <p className="font-medium">{leader.name}</p>
+                        <p className="text-sm text-gray-500">Email: {leader.email}</p>
+                        <p className="text-sm text-gray-500">Setor: {leader.sector}</p>
+                        <div className="flex gap-2 mt-1">
+                          <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                            {leader.assignedOperators?.length || 0} Operadores
+                          </span>
+                          <span className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                            {leader.assignedEquipments?.length || 0} Equipamentos
+                          </span>
+                        </div>
+                      </div>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleRemoveLeader(leader.id)}
+                      >
+                        Remover
+                      </Button>
+                    </div>
+                  ))}
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="leader-password">Senha</Label>
-                  <Input
-                    id="leader-password"
-                    type="password"
-                    value={newLeaderPassword}
-                    onChange={(e) => setNewLeaderPassword(e.target.value)}
-                  />
-                </div>
-                <Button type="submit" className="w-full">
-                  Adicionar Líder
-                </Button>
-              </form>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
