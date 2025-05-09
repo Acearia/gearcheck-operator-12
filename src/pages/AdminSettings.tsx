@@ -17,6 +17,7 @@ interface Leader {
   name: string;
   email: string;
   sector: string;
+  password?: string;
   assignedOperators: string[];
   assignedEquipments: string[];
 }
@@ -32,6 +33,11 @@ const AdminSettings = () => {
   const [testDbConnection, setTestDbConnection] = useState(false);
   const [dbConnectionResult, setDbConnectionResult] = useState("");
   const [leaders, setLeaders] = useState<Leader[]>([]);
+  
+  // Para o diálogo de configuração de senha do líder
+  const [selectedLeader, setSelectedLeader] = useState<Leader | null>(null);
+  const [leaderPassword, setLeaderPassword] = useState("");
+  const [confirmLeaderPassword, setConfirmLeaderPassword] = useState("");
   
   useEffect(() => {
     // Load leaders from localStorage to match AdminLeaderDashboard
@@ -69,6 +75,48 @@ const AdminSettings = () => {
     setCurrentPassword("");
     setNewPassword("");
     setConfirmPassword("");
+  };
+
+  const handleSaveLeaderPassword = () => {
+    if (!selectedLeader) return;
+    
+    if (!leaderPassword || !confirmLeaderPassword) {
+      toast({
+        title: "Erro",
+        description: "Todos os campos são obrigatórios",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (leaderPassword !== confirmLeaderPassword) {
+      toast({
+        title: "Erro",
+        description: "As senhas não coincidem",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Update leader password
+    const updatedLeaders = leaders.map(leader => {
+      if (leader.id === selectedLeader.id) {
+        return { ...leader, password: leaderPassword };
+      }
+      return leader;
+    });
+    
+    setLeaders(updatedLeaders);
+    localStorage.setItem('gearcheck-leaders', JSON.stringify(updatedLeaders));
+    
+    toast({
+      title: "Senha Definida",
+      description: `Senha para ${selectedLeader.name} foi definida com sucesso`,
+    });
+    
+    setLeaderPassword("");
+    setConfirmLeaderPassword("");
+    setSelectedLeader(null);
   };
 
   const handleSaveNotifications = () => {
@@ -450,15 +498,9 @@ const AdminSettings = () => {
               <div>
                 <CardTitle>Líderes Cadastrados</CardTitle>
                 <CardDescription>
-                  Gerencie os líderes e suas atribuições de equipamentos e operadores
+                  Gerencie os líderes e configure suas credenciais de acesso
                 </CardDescription>
               </div>
-              <Button variant="outline" asChild>
-                <Link to="/admin/leaders" className="flex items-center gap-2">
-                  <ExternalLink className="h-4 w-4" />
-                  Ver Painel Completo
-                </Link>
-              </Button>
             </CardHeader>
             <CardContent className="space-y-4">
               {leaders.length === 0 ? (
@@ -466,19 +508,8 @@ const AdminSettings = () => {
                   <Briefcase className="mx-auto h-8 w-8 text-gray-400" />
                   <h3 className="mt-2 text-sm font-medium text-gray-900">Nenhum líder cadastrado</h3>
                   <p className="mt-1 text-sm text-gray-500">
-                    Adicione líderes no painel completo de gerenciamento de líderes
+                    Adicione líderes no Dashboard Admin para gerenciá-los aqui
                   </p>
-                  <div className="mt-6">
-                    <Button 
-                      asChild 
-                      className="flex items-center gap-2"
-                    >
-                      <Link to="/admin/leaders">
-                        <span className="h-4 w-4 flex items-center justify-center">+</span>
-                        Gerenciar Líderes
-                      </Link>
-                    </Button>
-                  </div>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -495,20 +526,81 @@ const AdminSettings = () => {
                           <span className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
                             {leader.assignedEquipments?.length || 0} Equipamentos
                           </span>
+                          <span className={`${leader.password ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'} text-xs font-medium px-2.5 py-0.5 rounded-full`}>
+                            {leader.password ? 'Senha Configurada' : 'Sem Senha'}
+                          </span>
                         </div>
                       </div>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => handleRemoveLeader(leader.id)}
-                      >
-                        Remover
-                      </Button>
+                      <div className="flex gap-2">
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button 
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setSelectedLeader(leader)}
+                            >
+                              <KeyRound className="h-4 w-4 mr-1" /> 
+                              Definir Senha
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Definir Senha para {selectedLeader?.name}</DialogTitle>
+                              <DialogDescription>
+                                Configure a senha de acesso para este líder.
+                              </DialogDescription>
+                            </DialogHeader>
+                            
+                            <div className="space-y-4 py-4">
+                              <div className="space-y-2">
+                                <Label htmlFor="leader-password">Nova Senha</Label>
+                                <Input
+                                  id="leader-password"
+                                  type="password"
+                                  value={leaderPassword}
+                                  onChange={(e) => setLeaderPassword(e.target.value)}
+                                />
+                              </div>
+                              
+                              <div className="space-y-2">
+                                <Label htmlFor="confirm-leader-password">Confirmar Senha</Label>
+                                <Input
+                                  id="confirm-leader-password"
+                                  type="password"
+                                  value={confirmLeaderPassword}
+                                  onChange={(e) => setConfirmLeaderPassword(e.target.value)}
+                                />
+                              </div>
+                            </div>
+                            
+                            <DialogFooter>
+                              <Button onClick={handleSaveLeaderPassword} className="bg-red-700 hover:bg-red-800">
+                                Salvar Senha
+                              </Button>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
+                        
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleRemoveLeader(leader.id)}
+                        >
+                          Remover
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>
               )}
             </CardContent>
+            <CardFooter>
+              <Link to="/admin">
+                <Button variant="outline" className="w-full">
+                  Voltar para o Dashboard
+                </Button>
+              </Link>
+            </CardFooter>
           </Card>
         </TabsContent>
         
