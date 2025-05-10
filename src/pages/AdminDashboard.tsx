@@ -15,6 +15,7 @@ import { Link } from "react-router-dom";
 import { CheckCircle, Database, AlertCircle, RefreshCw, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { operators as initialOperators, equipments as initialEquipments } from "@/lib/data";
+import { initializeDefaultData, getDatabaseConfig } from "@/lib/checklistStore";
 
 const AdminDashboard = () => {
   const { toast } = useToast();
@@ -37,23 +38,38 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     console.log("Dashboard mounting or refreshing...");
+    
+    // Garantir que os dados iniciais estejam carregados
+    initializeDefaultData();
+    
+    // Verificar a conexão com o banco de dados
     checkDatabaseConnection();
   }, [refreshTrigger]); // Adicionar refreshTrigger como dependência
 
   const checkDatabaseConnection = async () => {
     try {
       console.log("Checking database connection...");
-      const dbConfig = localStorage.getItem('gearcheck-db-config');
+      const dbConfig = getDatabaseConfig();
       
       if (!dbConfig) {
         setDbConnectionStatus('error');
         setIsLoading(false);
         console.log("No DB config found");
         return;
+      } else {
+        console.log("DB Config found:", dbConfig);
       }
 
-      // Simular conexão bem-sucedida para fins de desenvolvimento
-      setDbConnectionStatus('connected');
+      // Verifica se já houve uma conexão bem-sucedida anteriormente
+      if (dbConfig.connectionSuccess) {
+        console.log("Previously successful connection detected");
+        setDbConnectionStatus('connected');
+      } else {
+        console.log("No successful connection detected");
+        setDbConnectionStatus('error');
+      }
+
+      // Carrega os dados do dashboard de qualquer forma
       loadDashboardData();
       
     } catch (error) {
@@ -194,6 +210,10 @@ const AdminDashboard = () => {
 
   const handleRefreshData = () => {
     setIsLoading(true);
+    
+    // Garantir que os dados iniciais estejam carregados
+    initializeDefaultData();
+    
     // Usar o estado para forçar uma atualização
     setRefreshTrigger(prev => prev + 1);
     toast({

@@ -14,6 +14,7 @@ export interface ChecklistFormState {
 // Chave para armazenar no localStorage
 const CHECKLIST_STORE_KEY = 'gearcheck-current-checklist';
 const DB_CONFIG_KEY = 'gearcheck-db-config';
+const INITIAL_DATA_LOADED_KEY = 'gearcheck-initial-data-loaded';
 
 // Estado inicial
 const initialState: ChecklistFormState = {
@@ -38,7 +39,7 @@ export interface DatabaseConfig {
 
 // Configuração padrão do banco de dados
 export const defaultDbConfig: DatabaseConfig = {
-  host: "172.16.5.193",
+  host: "localhost",
   port: "5432",
   database: "postgres",
   user: "postgres",
@@ -78,8 +79,41 @@ export const saveDatabaseConfig = (config: Partial<DatabaseConfig>): DatabaseCon
 // Garantir que os dados iniciais sejam armazenados
 export const initializeDefaultData = () => {
   console.log("Initializing default data...");
+  
+  // Verificar se os dados já foram inicializados anteriormente
+  const isInitialized = localStorage.getItem(INITIAL_DATA_LOADED_KEY);
+  
+  if (isInitialized === 'true') {
+    console.log("Data was already initialized. Checking consistency...");
+    
+    // Mesmo já tendo inicializado, verificar se os dados estão consistentes
+    const operatorsData = localStorage.getItem('gearcheck-operators');
+    const equipmentsData = localStorage.getItem('gearcheck-equipments');
+    
+    let needsReinitialization = false;
+    
+    if (!operatorsData) {
+      console.log("No operators found despite initialization flag. Will reinitialize.");
+      needsReinitialization = true;
+    }
+    
+    if (!equipmentsData) {
+      console.log("No equipments found despite initialization flag. Will reinitialize.");
+      needsReinitialization = true;
+    }
+    
+    if (!needsReinitialization) {
+      console.log("Data consistency check passed. Using existing data.");
+      return; // Dados já inicializados e consistentes
+    }
+  }
+  
+  // Se chegou aqui, precisamos inicializar ou reinicializar os dados
   const operatorsData = localStorage.getItem('gearcheck-operators');
   const equipmentsData = localStorage.getItem('gearcheck-equipments');
+  
+  let operatorsInitialized = false;
+  let equipmentsInitialized = false;
   
   // Se não existirem operadores e equipamentos, importa dos dados iniciais
   if (!operatorsData) {
@@ -87,6 +121,8 @@ export const initializeDefaultData = () => {
     import('./data').then(({ operators }) => {
       localStorage.setItem('gearcheck-operators', JSON.stringify(operators));
       console.log('Operadores inicializados com sucesso:', operators.length);
+      operatorsInitialized = true;
+      checkInitializationComplete();
     }).catch(error => {
       console.error("Failed to import operators:", error);
     });
@@ -95,12 +131,16 @@ export const initializeDefaultData = () => {
     try {
       const parsedOperators = JSON.parse(operatorsData);
       console.log(`Found ${parsedOperators.length} operators in localStorage`);
+      operatorsInitialized = true;
+      checkInitializationComplete();
     } catch (e) {
       console.error("Error parsing operators in localStorage:", e);
       // Em caso de operadores inválidos no localStorage, tenta inicializar novamente
       import('./data').then(({ operators }) => {
         localStorage.setItem('gearcheck-operators', JSON.stringify(operators));
         console.log('Operadores recarregados com sucesso após erro');
+        operatorsInitialized = true;
+        checkInitializationComplete();
       });
     }
   }
@@ -110,11 +150,15 @@ export const initializeDefaultData = () => {
     import('./data').then(({ equipments }) => {
       localStorage.setItem('gearcheck-equipments', JSON.stringify(equipments));
       console.log('Equipamentos inicializados com sucesso:', equipments.length);
+      equipmentsInitialized = true;
+      checkInitializationComplete();
     }).catch(error => {
       console.error("Failed to import equipments:", error);
     });
   } else {
     console.log("Equipments already exist in localStorage");
+    equipmentsInitialized = true;
+    checkInitializationComplete();
   }
   
   // Verificar o estado atual do checklist
@@ -127,6 +171,13 @@ export const initializeDefaultData = () => {
   if (!localStorage.getItem(DB_CONFIG_KEY)) {
     console.log("No database config found, initializing with default config");
     localStorage.setItem(DB_CONFIG_KEY, JSON.stringify(defaultDbConfig));
+  }
+  
+  function checkInitializationComplete() {
+    if (operatorsInitialized && equipmentsInitialized) {
+      console.log("All data successfully initialized");
+      localStorage.setItem(INITIAL_DATA_LOADED_KEY, 'true');
+    }
   }
 };
 
