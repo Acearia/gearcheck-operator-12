@@ -37,6 +37,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { getDatabaseConfig, saveDatabaseConfig } from "@/lib/checklistStore";
 
 const DatabaseConnectionForm = () => {
   const { toast } = useToast();
