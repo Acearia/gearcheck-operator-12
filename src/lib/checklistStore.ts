@@ -50,6 +50,9 @@ export const defaultDbConfig: DatabaseConfig = {
 export const getDatabaseConfig = (): DatabaseConfig => {
   const storedConfig = localStorage.getItem(DB_CONFIG_KEY);
   if (!storedConfig) {
+    console.log("No database config found in localStorage. Using default config.");
+    // Salvar a configuração padrão se não existir
+    localStorage.setItem(DB_CONFIG_KEY, JSON.stringify(defaultDbConfig));
     return defaultDbConfig;
   }
   
@@ -57,6 +60,8 @@ export const getDatabaseConfig = (): DatabaseConfig => {
     return JSON.parse(storedConfig);
   } catch (e) {
     console.error('Erro ao analisar configuração do banco de dados:', e);
+    // Em caso de erro, resetar para os valores padrão
+    localStorage.setItem(DB_CONFIG_KEY, JSON.stringify(defaultDbConfig));
     return defaultDbConfig;
   }
 };
@@ -66,36 +71,61 @@ export const saveDatabaseConfig = (config: Partial<DatabaseConfig>): DatabaseCon
   const currentConfig = getDatabaseConfig();
   const newConfig = { ...currentConfig, ...config };
   localStorage.setItem(DB_CONFIG_KEY, JSON.stringify(newConfig));
+  console.log("Database config saved:", newConfig);
   return newConfig;
 };
 
 // Garantir que os dados iniciais sejam armazenados
 export const initializeDefaultData = () => {
+  console.log("Initializing default data...");
   const operatorsData = localStorage.getItem('gearcheck-operators');
   const equipmentsData = localStorage.getItem('gearcheck-equipments');
   
   // Se não existirem operadores e equipamentos, importa dos dados iniciais
   if (!operatorsData) {
+    console.log("No operators found in localStorage, importing initial data");
     import('./data').then(({ operators }) => {
       localStorage.setItem('gearcheck-operators', JSON.stringify(operators));
-      console.log('Operadores inicializados com sucesso');
+      console.log('Operadores inicializados com sucesso:', operators.length);
+    }).catch(error => {
+      console.error("Failed to import operators:", error);
     });
+  } else {
+    console.log("Operators already exist in localStorage");
+    try {
+      const parsedOperators = JSON.parse(operatorsData);
+      console.log(`Found ${parsedOperators.length} operators in localStorage`);
+    } catch (e) {
+      console.error("Error parsing operators in localStorage:", e);
+      // Em caso de operadores inválidos no localStorage, tenta inicializar novamente
+      import('./data').then(({ operators }) => {
+        localStorage.setItem('gearcheck-operators', JSON.stringify(operators));
+        console.log('Operadores recarregados com sucesso após erro');
+      });
+    }
   }
   
   if (!equipmentsData) {
+    console.log("No equipments found in localStorage, importing initial data");
     import('./data').then(({ equipments }) => {
       localStorage.setItem('gearcheck-equipments', JSON.stringify(equipments));
-      console.log('Equipamentos inicializados com sucesso');
+      console.log('Equipamentos inicializados com sucesso:', equipments.length);
+    }).catch(error => {
+      console.error("Failed to import equipments:", error);
     });
+  } else {
+    console.log("Equipments already exist in localStorage");
   }
   
   // Verificar o estado atual do checklist
   if (!localStorage.getItem(CHECKLIST_STORE_KEY)) {
+    console.log("No checklist state found, initializing with default state");
     localStorage.setItem(CHECKLIST_STORE_KEY, JSON.stringify(initialState));
   }
   
   // Verificar configuração do banco de dados
   if (!localStorage.getItem(DB_CONFIG_KEY)) {
+    console.log("No database config found, initializing with default config");
     localStorage.setItem(DB_CONFIG_KEY, JSON.stringify(defaultDbConfig));
   }
 };

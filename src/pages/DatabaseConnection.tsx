@@ -1,11 +1,18 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Home } from "lucide-react";
 import DatabaseConnectionForm from "@/components/database/DatabaseConnectionForm";
+import { initializeDefaultData } from "@/lib/checklistStore";
 
 const DatabaseConnection = () => {
+  // Garantir que os dados iniciais são carregados quando esta página é acessada
+  useEffect(() => {
+    console.log("DatabaseConnection page mounted - ensuring data is initialized");
+    initializeDefaultData();
+  }, []);
+
   return (
     <div className="container mx-auto py-6 px-4">
       <div className="flex justify-between items-center mb-6">

@@ -31,33 +31,46 @@ const ChecklistOperator = () => {
   const steps = ["Operador", "Equipamento", "Checklist", "Mídia", "Enviar"];
 
   useEffect(() => {
+    console.log("ChecklistOperator component mounted - initializing data");
     setIsLoadingData(true);
-    // Inicializar dados padrão
+    // Inicializar dados padrão - garantindo que aconteça antes de qualquer outra operação
     initializeDefaultData();
-    checkDatabaseConnection();
-    loadOperators();
     
-    // Carregar dados do estado atual se existirem
-    const currentState = getChecklistState();
-    if (currentState.operator) {
-      setSelectedOperator(currentState.operator);
-    }
+    // Forçamos um pequeno delay para garantir que initializeDefaultData tenha concluído
+    setTimeout(() => {
+      checkDatabaseConnection();
+      loadOperators();
+      
+      // Carregar dados do estado atual se existirem
+      const currentState = getChecklistState();
+      if (currentState.operator) {
+        setSelectedOperator(currentState.operator);
+      }
+    }, 500);
   }, []);
 
   const checkDatabaseConnection = async () => {
     try {
+      console.log("Checking database connection status...");
       const dbConfig = localStorage.getItem('gearcheck-db-config');
       
       if (!dbConfig) {
+        console.log("No database config found in localStorage");
         setDbConnectionStatus('error');
         return;
       }
 
-      const { host, port } = JSON.parse(dbConfig);
+      const { host, port, connectionSuccess } = JSON.parse(dbConfig);
+      console.log(`Database config found: host=${host}, port=${port}, connectionSuccess=${connectionSuccess}`);
       
-      if (host === '172.16.5.193' && port === '5432') {
+      if (connectionSuccess === true) {
+        console.log("Database connection previously successful");
+        setDbConnectionStatus('connected');
+      } else if (host === '172.16.5.193' && port === '5432') {
+        console.log("Default database config found, marking as connected");
         setDbConnectionStatus('connected');
       } else {
+        console.log("Database connection not successful");
         setDbConnectionStatus('error');
       }
     } catch (error) {
@@ -145,6 +158,7 @@ const ChecklistOperator = () => {
     }
     
     // Salvar no localStorage
+    console.log(`Saving ${operatorsData.length} operators to localStorage`);
     localStorage.setItem('gearcheck-operators', JSON.stringify(operatorsData));
     setOperators(operatorsData);
     console.log(`Processado e salvo ${operatorsData.length} operadores`);
@@ -306,9 +320,14 @@ const ChecklistOperator = () => {
                 )}
               </SelectContent>
             </Select>
-            {operators.length === 0 && (
+            {operators.length === 0 && !isLoadingData && (
               <div className="mt-2 text-sm text-red-500">
                 Nenhum operador cadastrado. Adicione um operador clicando no botão + acima.
+              </div>
+            )}
+            {isLoadingData && (
+              <div className="mt-2 text-sm text-blue-500">
+                Carregando operadores...
               </div>
             )}
           </div>
