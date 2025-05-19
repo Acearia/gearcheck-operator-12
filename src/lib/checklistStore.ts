@@ -157,7 +157,30 @@ export const initializeDefaultData = () => {
     });
   } else {
     console.log("Equipments already exist in localStorage");
-    equipmentsInitialized = true;
+    try {
+      const parsedEquipments = JSON.parse(equipmentsData);
+      if (Array.isArray(parsedEquipments) && parsedEquipments.length > 0) {
+        console.log(`Found ${parsedEquipments.length} valid equipments in localStorage`);
+        equipmentsInitialized = true;
+      } else {
+        console.warn("Equipment data exists but is empty or invalid. Reinitializing...");
+        import('./data').then(({ equipments }) => {
+          localStorage.setItem('gearcheck-equipments', JSON.stringify(equipments));
+          console.log('Equipamentos recarregados com sucesso:', equipments.length);
+          equipmentsInitialized = true;
+          checkInitializationComplete();
+        });
+      }
+    } catch (e) {
+      console.error("Error parsing equipments in localStorage:", e);
+      import('./data').then(({ equipments }) => {
+        localStorage.setItem('gearcheck-equipments', JSON.stringify(equipments));
+        console.log('Equipamentos recarregados com sucesso após erro');
+        equipmentsInitialized = true;
+        checkInitializationComplete();
+      });
+    }
+    
     checkInitializationComplete();
   }
   
@@ -178,6 +201,19 @@ export const initializeDefaultData = () => {
       console.log("All data successfully initialized");
       localStorage.setItem(INITIAL_DATA_LOADED_KEY, 'true');
     }
+  }
+};
+
+// Função de força bruta para reinicializar equipamentos
+export const forceEquipmentInitialization = async () => {
+  try {
+    const { equipments } = await import('./data');
+    localStorage.setItem('gearcheck-equipments', JSON.stringify(equipments));
+    console.log('Equipamentos forçadamente reinicializados:', equipments.length);
+    return equipments;
+  } catch (error) {
+    console.error("Failed to force equipment initialization:", error);
+    return [];
   }
 };
 

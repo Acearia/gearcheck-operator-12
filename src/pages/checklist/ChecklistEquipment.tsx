@@ -62,8 +62,14 @@ const ChecklistEquipment = () => {
   };
 
   const handleEquipmentSelect = (equipmentId: string) => {
-    const equipment = equipments.find(eq => eq.id === equipmentId) || null;
-    setSelectedEquipment(equipment);
+    console.log("Equipment selected with ID:", equipmentId);
+    const equipment = equipments.find(eq => eq.id === equipmentId);
+    if (equipment) {
+      console.log("Found equipment:", equipment);
+      setSelectedEquipment(equipment);
+    } else {
+      console.error("Equipment not found with ID:", equipmentId);
+    }
   };
 
   const getEquipmentTypeText = (type: string) => {
@@ -96,6 +102,26 @@ const ChecklistEquipment = () => {
     navigate('/checklist-steps/items');
   };
 
+  // Debug function to log available equipments
+  const logEquipments = () => {
+    console.log("Currently loaded equipments:", equipments);
+    if (equipments.length === 0) {
+      console.warn("No equipments available for selection!");
+      initializeEquipments();
+    }
+  };
+
+  // Force initialization of equipments if needed
+  const initializeEquipments = () => {
+    console.log("Forcing equipment initialization...");
+    localStorage.setItem('gearcheck-equipments', JSON.stringify(initialEquipments));
+    setEquipments(initialEquipments);
+    toast({
+      title: "Equipamentos recarregados",
+      description: `${initialEquipments.length} equipamentos foram carregados.`,
+    });
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-white">
       <ChecklistHeader backUrl="/checklist-steps/operator" />
@@ -110,18 +136,38 @@ const ChecklistEquipment = () => {
             <Select 
               onValueChange={handleEquipmentSelect}
               value={selectedEquipment?.id}
+              defaultValue={selectedEquipment?.id}
             >
               <SelectTrigger className="w-full bg-white">
                 <SelectValue placeholder="Selecione o equipamento" />
               </SelectTrigger>
-              <SelectContent>
-                {equipments.map(equipment => (
-                  <SelectItem key={equipment.id} value={equipment.id}>
-                    {equipment.name} (KP: {equipment.kp})
+              <SelectContent className="bg-white z-50">
+                {equipments && equipments.length > 0 ? (
+                  equipments.map(equipment => (
+                    <SelectItem key={equipment.id} value={equipment.id}>
+                      {equipment.name} (KP: {equipment.kp})
+                    </SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value="no-equipments" disabled>
+                    Nenhum equipamento encontrado
                   </SelectItem>
-                ))}
+                )}
               </SelectContent>
             </Select>
+            
+            {equipments.length === 0 && (
+              <div className="mt-2 text-sm text-red-500">
+                Nenhum equipamento disponível para seleção.
+                <Button 
+                  onClick={initializeEquipments} 
+                  variant="link" 
+                  className="text-blue-600 px-1"
+                >
+                  Recarregar equipamentos
+                </Button>
+              </div>
+            )}
           </div>
 
           {selectedEquipment && (
@@ -166,6 +212,18 @@ const ChecklistEquipment = () => {
                 />
               </div>
             </div>
+          )}
+          
+          {/* Debug button - only shown in development */}
+          {process.env.NODE_ENV === 'development' && (
+            <Button 
+              onClick={logEquipments}
+              variant="outline"
+              className="mt-3 text-xs"
+              size="sm"
+            >
+              Debug Equipments
+            </Button>
           )}
         </div>
 
