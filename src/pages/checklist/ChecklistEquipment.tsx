@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -13,7 +12,11 @@ import { useToast } from "@/hooks/use-toast";
 import ChecklistHeader from "@/components/checklist/ChecklistHeader";
 import { ChecklistStepIndicator } from "@/components/checklist/ChecklistProgressBar";
 import { equipments as initialEquipments, Equipment } from "@/lib/data";
-import { getChecklistState, saveChecklistState } from "@/lib/checklistStore";
+import { 
+  getChecklistState, 
+  saveChecklistState,
+  forceEquipmentInitialization 
+} from "@/lib/checklistStore";
 
 const ChecklistEquipment = () => {
   const navigate = useNavigate();
