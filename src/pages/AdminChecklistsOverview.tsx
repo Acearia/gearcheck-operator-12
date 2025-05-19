@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
@@ -39,6 +38,7 @@ import { Input } from "@/components/ui/input";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
+import { initializeDefaultData } from "@/lib/checklistStore";
 
 interface Inspection {
   id: string;
@@ -149,8 +149,37 @@ const AdminChecklistsOverview = () => {
   const watchFrequency = form.watch("frequency");
 
   useEffect(() => {
+    // Garantir que os dados padrão estejam inicializados
+    initializeDefaultData();
+    
     const fetchInspections = () => {
       try {
+        // Carregar equipamentos primeiro, pois precisamos deles para os agendamentos
+        const storedEquipments = localStorage.getItem('gearcheck-equipments');
+        if (storedEquipments) {
+          try {
+            const parsedEquipments = JSON.parse(storedEquipments);
+            console.log(`Loaded ${parsedEquipments.length} equipments from localStorage for admin view`);
+            
+            // Transformar para o formato esperado pelo componente
+            const formattedEquipments = parsedEquipments.map((eq) => ({
+              id: eq.id,
+              name: eq.name,
+              sector: eq.sector,
+              bridgeNumber: eq.bridgeNumber || eq.kp || "N/A"
+            }));
+            
+            setEquipmentList(formattedEquipments);
+            console.log("Equipment list set:", formattedEquipments);
+          } catch (error) {
+            console.error("Error parsing equipments:", error);
+            setEquipmentList([]);
+          }
+        } else {
+          console.warn("No equipment data found in localStorage");
+          setEquipmentList([]);
+        }
+
         const storedInspections = localStorage.getItem('gearcheck-inspections');
         if (storedInspections) {
           const parsedInspections: Inspection[] = JSON.parse(storedInspections);
@@ -199,13 +228,6 @@ const AdminChecklistsOverview = () => {
             });
           });
           setGroupedInspections(grouped);
-        }
-
-        // Extract equipment list from inspections
-        const storedEquipment = localStorage.getItem('gearcheck-equipment');
-        if (storedEquipment) {
-          const parsedEquipment = JSON.parse(storedEquipment);
-          setEquipmentList(parsedEquipment);
         }
 
         // Load scheduled inspections
@@ -721,18 +743,25 @@ const AdminChecklistsOverview = () => {
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value}
+                      value={field.value}
                     >
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger className="bg-white">
                           <SelectValue placeholder="Selecione um equipamento" />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent>
-                        {equipmentList.map(equipment => (
-                          <SelectItem key={equipment.id} value={equipment.id}>
-                            {equipment.name} ({equipment.sector} - Ponte {equipment.bridgeNumber || "N/A"})
+                      <SelectContent className="bg-white">
+                        {equipmentList && equipmentList.length > 0 ? (
+                          equipmentList.map(equipment => (
+                            <SelectItem key={equipment.id} value={equipment.id}>
+                              {equipment.name} ({equipment.sector} - Ponte {equipment.bridgeNumber || "N/A"})
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="no-equipment" disabled>
+                            Nenhum equipamento encontrado
                           </SelectItem>
-                        ))}
+                        )}
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -766,13 +795,14 @@ const AdminChecklistsOverview = () => {
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value}
+                      value={field.value}
                     >
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger className="bg-white">
                           <SelectValue placeholder="Selecione a frequência" />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent>
+                      <SelectContent className="bg-white">
                         <SelectItem value="daily">Diário</SelectItem>
                         <SelectItem value="weekly">Semanal</SelectItem>
                         <SelectItem value="monthly">Mensal</SelectItem>
@@ -872,13 +902,14 @@ const AdminChecklistsOverview = () => {
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value}
+                      value={field.value}
                     >
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger className="bg-white">
                           <SelectValue placeholder="Selecione um líder" />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent>
+                      <SelectContent className="bg-white">
                         {leadersList.map(leader => (
                           <SelectItem key={leader.id} value={leader.id}>
                             {leader.name} ({leader.email})
