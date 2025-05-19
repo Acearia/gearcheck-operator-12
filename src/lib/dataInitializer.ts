@@ -1,6 +1,7 @@
 
 import { INITIAL_DATA_LOADED_KEY, CHECKLIST_STORE_KEY } from "./types";
 import { getChecklistState } from "./checklistState";
+import { initialChecklistState, defaultDbConfig } from "./types";
 
 // Função de força bruta para reinicializar equipamentos
 export const forceEquipmentInitialization = async () => {
@@ -126,14 +127,12 @@ export const initializeDefaultData = () => {
   // Verificar o estado atual do checklist
   if (!localStorage.getItem(CHECKLIST_STORE_KEY)) {
     console.log("No checklist state found, initializing with default state");
-    const { initialChecklistState } = require('./types');
     localStorage.setItem(CHECKLIST_STORE_KEY, JSON.stringify(initialChecklistState));
   }
   
   // Verificar configuração do banco de dados
   if (!localStorage.getItem("gearcheck-db-config")) {
     console.log("No database config found, initializing with default config");
-    const { defaultDbConfig } = require('./types');
     localStorage.setItem("gearcheck-db-config", JSON.stringify(defaultDbConfig));
   }
   
