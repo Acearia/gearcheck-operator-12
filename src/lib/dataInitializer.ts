@@ -2,6 +2,7 @@
 import { INITIAL_DATA_LOADED_KEY, CHECKLIST_STORE_KEY } from "./types";
 import { getChecklistState } from "./checklistState";
 import { initialChecklistState, defaultDbConfig } from "./types";
+import { getDatabaseConfig } from "./databaseConfig";
 
 // Função de força bruta para reinicializar equipamentos
 export const forceEquipmentInitialization = async () => {
@@ -14,6 +15,12 @@ export const forceEquipmentInitialization = async () => {
     console.error("Failed to force equipment initialization:", error);
     return [];
   }
+};
+
+// Verificar se o banco de dados está conectado
+export const isDatabaseConnected = (): boolean => {
+  const dbConfig = getDatabaseConfig();
+  return dbConfig.connectionSuccess;
 };
 
 // Garantir que os dados iniciais sejam armazenados

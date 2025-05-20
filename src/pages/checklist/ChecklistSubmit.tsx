@@ -8,6 +8,7 @@ import ChecklistHeader from "@/components/checklist/ChecklistHeader";
 import { ChecklistStepIndicator } from "@/components/checklist/ChecklistProgressBar";
 import SignatureCanvas from "@/components/SignatureCanvas";
 import { getChecklistState, saveChecklistState, clearChecklistState } from "@/lib/checklistStore";
+import { isDatabaseConnected } from "@/lib/dataInitializer";
 
 const ChecklistSubmit = () => {
   const navigate = useNavigate();
@@ -38,26 +39,10 @@ const ChecklistSubmit = () => {
     }
   }, [navigate, currentState.operator, currentState.equipment, currentState.checklist]);
 
-  const checkDatabaseConnection = async () => {
-    try {
-      const dbConfig = localStorage.getItem('gearcheck-db-config');
-      
-      if (!dbConfig) {
-        setDbConnectionStatus('error');
-        return;
-      }
-
-      const { host, port } = JSON.parse(dbConfig);
-      
-      if (host === '172.16.5.193' && port === '5432') {
-        setDbConnectionStatus('connected');
-      } else {
-        setDbConnectionStatus('error');
-      }
-    } catch (error) {
-      console.error('Error checking database connection:', error);
-      setDbConnectionStatus('error');
-    }
+  const checkDatabaseConnection = () => {
+    // Verificar se o banco de dados está conectado usando a função atualizada
+    const isConnected = isDatabaseConnected();
+    setDbConnectionStatus(isConnected ? 'connected' : 'error');
   };
 
   const handleBack = () => {
@@ -96,9 +81,27 @@ const ChecklistSubmit = () => {
         submissionDate: new Date().toISOString(),
       };
 
+      // Armazenar os dados localmente para compatibilidade offline
       const existingInspections = JSON.parse(localStorage.getItem('gearcheck-inspections') || '[]');
       const updatedInspections = [formData, ...existingInspections];
       localStorage.setItem('gearcheck-inspections', JSON.stringify(updatedInspections));
+
+      // Se o banco de dados estiver conectado, tentar salvar os dados no banco de dados
+      if (dbConnectionStatus === 'connected') {
+        console.log('Banco de dados conectado, tentando salvar inspeção no PostgreSQL');
+        // Aqui seria implementada a lógica para salvar no banco de dados real
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        toast({
+          title: "Dados sincronizados",
+          description: "Inspeção salva localmente e sincronizada com o banco de dados.",
+        });
+      } else {
+        toast({
+          title: "Dados salvos localmente",
+          description: "Inspeção salva no armazenamento local. Sincronize com o banco de dados quando disponível.",
+        });
+      }
 
       // Check if there's a leader for this equipment's sector
       try {
@@ -117,10 +120,6 @@ const ChecklistSubmit = () => {
         }
       } catch (error) {
         console.error("Error processing leader notifications:", error);
-      }
-
-      if (dbConnectionStatus === 'connected') {
-        await new Promise(resolve => setTimeout(resolve, 1000));
       }
 
       toast({

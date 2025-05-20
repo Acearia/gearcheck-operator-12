@@ -4,14 +4,16 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Home, Database, RefreshCw } from "lucide-react";
 import DatabaseConnectionForm from "@/components/database/DatabaseConnectionForm";
-import { initializeDefaultData, getDatabaseConfig } from "@/lib/checklistStore";
+import { initializeDefaultData, isDatabaseConnected } from "@/lib/dataInitializer";
+import { getDatabaseConfig } from "@/lib/databaseConfig";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 
 const DatabaseConnection = () => {
   const { toast } = useToast();
   const [isInitializing, setIsInitializing] = useState(true);
-  const [dbConfig, setDbConfig] = useState(null);
+  const [dbConfig, setDbConfig] = useState<any>(null);
+  const [connectionStatus, setConnectionStatus] = useState<'checking' | 'connected' | 'disconnected'>('checking');
   
   // Garantir que os dados iniciais são carregados quando esta página é acessada
   useEffect(() => {
@@ -23,6 +25,10 @@ const DatabaseConnection = () => {
     
     // Inicializar dados padrão
     initializeDefaultData();
+    
+    // Verificar se o banco de dados está conectado
+    const isConnected = isDatabaseConnected();
+    setConnectionStatus(isConnected ? 'connected' : 'disconnected');
     
     // Simular carregamento para uma melhor experiência do usuário
     const timer = setTimeout(() => {
@@ -43,6 +49,10 @@ const DatabaseConnection = () => {
     
     const config = getDatabaseConfig();
     setDbConfig(config);
+    
+    // Verificar se o banco de dados está conectado
+    const isConnected = isDatabaseConnected();
+    setConnectionStatus(isConnected ? 'connected' : 'disconnected');
     
     setTimeout(() => {
       setIsInitializing(false);
@@ -85,15 +95,15 @@ const DatabaseConnection = () => {
         </div>
       ) : (
         <>
-          {dbConfig && dbConfig.connectionSuccess ? (
+          {connectionStatus === 'connected' && (
             <Alert className="mb-6 bg-green-50 border-green-200">
               <Database className="h-5 w-5 text-green-600" />
               <AlertTitle className="text-green-700">Conexão Ativa</AlertTitle>
               <AlertDescription className="text-green-600">
-                Você já está conectado ao banco de dados em {dbConfig.host}:{dbConfig.port}.
+                Você já está conectado ao banco de dados em {dbConfig?.host}:{dbConfig?.port}.
               </AlertDescription>
             </Alert>
-          ) : null}
+          )}
           
           <DatabaseConnectionForm />
         </>
