@@ -41,7 +41,7 @@ const Index = () => {
                 <div className="w-full space-y-4">
                   <Link to="/checklist" className="w-full">
                     <Button 
-                      className="w-full py-6 bg-red-700 hover:bg-red-800 text-white text-lg flex flex-col items-center gap-2"
+                      className="w-full py-8 bg-red-700 hover:bg-red-800 text-white text-lg flex flex-col items-center gap-2"
                     >
                       <ClipboardCheck size={40} />
                       <span>Iniciar Checklist</span>
