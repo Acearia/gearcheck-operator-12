@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Check, X, ChevronDown, ArrowLeft, Database, Save, Settings, Camera, FileImage, MessageCircle } from "lucide-react";
@@ -441,22 +440,7 @@ const Checklist = () => {
           <ArrowLeft size={24} />
         </Link>
         <h1 className="font-bold text-lg">Checklist - AFM</h1>
-        <div className="flex items-center space-x-2">
-          <button 
-            onClick={toggleDebugInfo}
-            className="text-white bg-red-800 p-1 rounded-full"
-            aria-label="Debug Info"
-          >
-            <div className="h-6 w-6 flex items-center justify-center">?</div>
-          </button>
-          <button 
-            onClick={() => setDialogOpen(true)} 
-            className="text-white bg-red-800 p-1 rounded-full"
-            aria-label="Adicionar Operador"
-          >
-            <div className="h-6 w-6 flex items-center justify-center">+</div>
-          </button>
-        </div>
+        <div></div>
       </header>
 
       {dbConnectionStatus === 'error' && (
