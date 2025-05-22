@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -11,20 +12,25 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import ChecklistHeader from "@/components/checklist/ChecklistHeader";
 import { ChecklistStepIndicator } from "@/components/checklist/ChecklistProgressBar";
-import { equipments as initialEquipments, Equipment } from "@/lib/data";
+import { equipments as initialEquipments } from "@/lib/data";
 import { 
   getChecklistState, 
-  saveChecklistState,
-  forceEquipmentInitialization 
+  saveChecklistState 
 } from "@/lib/checklistStore";
+import { useEquipmentSelection } from "@/hooks/useEquipmentSelection";
+import EquipmentDetails from "@/components/checklist/EquipmentDetails";
+import EquipmentDebugButton from "@/components/checklist/EquipmentDebugButton";
 
 const ChecklistEquipment = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [equipments, setEquipments] = useState<Equipment[]>([]);
-  const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
-  const [isLoadingData, setIsLoadingData] = useState(true);
-
+  const { 
+    equipments, 
+    selectedEquipment, 
+    handleEquipmentSelect,
+    initializeEquipments
+  } = useEquipmentSelection();
+  
   const steps = ["Operador", "Equipamento", "Checklist", "Mídia", "Enviar"];
 
   useEffect(() => {
@@ -34,53 +40,19 @@ const ChecklistEquipment = () => {
       navigate('/checklist-steps/operator');
       return;
     }
-
-    loadEquipments();
     
     // Carregar equipamento selecionado anteriormente se existir
     if (currentState.equipment) {
-      setSelectedEquipment(currentState.equipment);
+      handleEquipmentSelect(currentState.equipment.id);
     }
   }, [navigate]);
 
-  const loadEquipments = () => {
-    try {
-      // Load equipments
-      const storedEquipments = localStorage.getItem('gearcheck-equipments');
-      if (storedEquipments) {
-        const parsedEquipments = JSON.parse(storedEquipments);
-        console.log(`Loaded ${parsedEquipments.length} equipments from localStorage`);
-        setEquipments(parsedEquipments);
-      } else {
-        console.log("No equipments found in localStorage, using initial data");
-        localStorage.setItem('gearcheck-equipments', JSON.stringify(initialEquipments));
-        setEquipments(initialEquipments);
-      }
-    } catch (e) {
-      console.error('Error loading equipments:', e);
-      setEquipments(initialEquipments);
-    }
-    
-    setIsLoadingData(false);
-  };
-
-  const handleEquipmentSelect = (equipmentId: string) => {
-    console.log("Equipment selected with ID:", equipmentId);
-    const equipment = equipments.find(eq => eq.id === equipmentId);
-    if (equipment) {
-      console.log("Found equipment:", equipment);
-      setSelectedEquipment(equipment);
-    } else {
-      console.error("Equipment not found with ID:", equipmentId);
-    }
-  };
-
-  const getEquipmentTypeText = (type: string) => {
-    switch (type) {
-      case "1": return "Ponte";
-      case "2": return "Talha";
-      case "3": return "Pórtico";
-      default: return "Outro";
+  // Debug function to log available equipments
+  const logEquipments = () => {
+    console.log("Currently loaded equipments:", equipments);
+    if (equipments.length === 0) {
+      console.warn("No equipments available for selection!");
+      initializeEquipments(initialEquipments);
     }
   };
 
@@ -103,26 +75,6 @@ const ChecklistEquipment = () => {
     
     // Navegar para a próxima etapa
     navigate('/checklist-steps/items');
-  };
-
-  // Debug function to log available equipments
-  const logEquipments = () => {
-    console.log("Currently loaded equipments:", equipments);
-    if (equipments.length === 0) {
-      console.warn("No equipments available for selection!");
-      initializeEquipments();
-    }
-  };
-
-  // Force initialization of equipments if needed
-  const initializeEquipments = () => {
-    console.log("Forcing equipment initialization...");
-    localStorage.setItem('gearcheck-equipments', JSON.stringify(initialEquipments));
-    setEquipments(initialEquipments);
-    toast({
-      title: "Equipamentos recarregados",
-      description: `${initialEquipments.length} equipamentos foram carregados.`,
-    });
   };
 
   return (
@@ -163,7 +115,7 @@ const ChecklistEquipment = () => {
               <div className="mt-2 text-sm text-red-500">
                 Nenhum equipamento disponível para seleção.
                 <Button 
-                  onClick={initializeEquipments} 
+                  onClick={() => initializeEquipments(initialEquipments)} 
                   variant="link" 
                   className="text-blue-600 px-1"
                 >
@@ -174,60 +126,13 @@ const ChecklistEquipment = () => {
           </div>
 
           {selectedEquipment && (
-            <div className="mt-4 grid grid-cols-2 gap-4">
-              <div className="flex flex-col">
-                <span className="text-sm text-gray-500 mb-1">KP</span>
-                <input 
-                  type="text" 
-                  value={selectedEquipment.kp} 
-                  className="px-4 py-2 border border-gray-300 rounded bg-gray-100" 
-                  readOnly 
-                />
-              </div>
-
-              <div className="flex flex-col">
-                <span className="text-sm text-gray-500 mb-1">Tipo</span>
-                <input 
-                  type="text" 
-                  value={getEquipmentTypeText(selectedEquipment.type)} 
-                  className="px-4 py-2 border border-gray-300 rounded bg-gray-100" 
-                  readOnly 
-                />
-              </div>
-
-              <div className="flex flex-col">
-                <span className="text-sm text-gray-500 mb-1">Setor</span>
-                <input 
-                  type="text" 
-                  value={selectedEquipment.sector} 
-                  className="px-4 py-2 border border-gray-300 rounded bg-gray-100" 
-                  readOnly 
-                />
-              </div>
-
-              <div className="flex flex-col">
-                <span className="text-sm text-gray-500 mb-1">Capacidade</span>
-                <input 
-                  type="text" 
-                  value={selectedEquipment.capacity} 
-                  className="px-4 py-2 border border-gray-300 rounded bg-gray-100" 
-                  readOnly 
-                />
-              </div>
-            </div>
+            <EquipmentDetails equipment={selectedEquipment} />
           )}
           
-          {/* Debug button - only shown in development */}
-          {process.env.NODE_ENV === 'development' && (
-            <Button 
-              onClick={logEquipments}
-              variant="outline"
-              className="mt-3 text-xs"
-              size="sm"
-            >
-              Debug Equipments
-            </Button>
-          )}
+          <EquipmentDebugButton 
+            equipments={equipments}
+            onDebugClick={logEquipments}
+          />
         </div>
 
         <div className="mt-8 flex justify-between">
