@@ -257,7 +257,7 @@ const AdminDashboard = () => {
           <AlertTitle>Problemas de conexão</AlertTitle>
           <AlertDescription className="flex justify-between items-center">
             <span>Não foi possível conectar ao banco de dados.</span>
-            <Link to="/admin/database">
+            <Link to="/admin/login?redirect=/admin/database">
               <Button variant="outline" size="sm">
                 Configurar Conexão
               </Button>

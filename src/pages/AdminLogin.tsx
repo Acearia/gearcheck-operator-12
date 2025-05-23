@@ -1,16 +1,18 @@
 
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { Lock, LogIn, ArrowLeft } from "lucide-react";
 
 const AdminLogin = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectPath = searchParams.get("redirect") || "/admin";
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -32,8 +34,8 @@ const AdminLogin = () => {
         description: "Bem-vindo ao painel administrativo",
       });
       
-      // Redirect to admin dashboard
-      navigate("/admin");
+      // Redirect to admin dashboard or the specified redirect path
+      navigate(redirectPath);
     } else {
       toast({
         title: "Falha no login",
