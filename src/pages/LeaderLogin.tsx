@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,7 +15,7 @@ const LeaderLogin = () => {
     // Check if already logged in
     const isAuthenticated = localStorage.getItem("gearcheck-leader-auth");
     if (isAuthenticated) {
-      navigate("/leader");
+      navigate("/leader/dashboard");
     }
   }, [navigate]);
 
@@ -56,7 +55,7 @@ const LeaderLogin = () => {
           description: `Bem-vindo(a), ${leader.name}`,
         });
         
-        navigate("/leader");
+        navigate("/leader/dashboard");
       } else {
         toast({
           title: "Erro",
