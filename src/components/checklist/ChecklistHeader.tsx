@@ -13,7 +13,7 @@ const ChecklistHeader: React.FC<ChecklistHeaderProps> = ({
   title = "Checklist - AFM"
 }) => {
   return (
-    <header className="bg-red-700 text-white px-4 py-6 shadow-md flex justify-between items-center">
+    <header className="bg-red-700 text-white px-4 py-6 shadow-md flex justify-between items-center max-w-3xl mx-auto w-full">
       <Link to={backUrl} className="text-white">
         <ArrowLeft size={24} />
       </Link>
