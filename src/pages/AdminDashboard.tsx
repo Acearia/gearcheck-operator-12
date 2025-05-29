@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { 
   Card, 
@@ -12,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { BarChart, PieChart } from "@/components/ui/charts";
 import { Link } from "react-router-dom";
-import { CheckCircle, Database, AlertCircle, RefreshCw, Users } from "lucide-react";
+import { CheckCircle, Database, AlertCircle, RefreshCw, Users, Building2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { operators as initialOperators, equipments as initialEquipments } from "@/lib/data";
 import { initializeDefaultData, getDatabaseConfig } from "@/lib/checklistStore";
@@ -27,7 +26,8 @@ const AdminDashboard = () => {
     completedInspections: 0,
     totalOperators: 0,
     totalEquipments: 0,
-    totalLeaders: 0
+    totalLeaders: 0,
+    totalSectors: 0
   });
   const [inspectionsByMonth, setInspectionsByMonth] = useState([]);
   const [inspectionsByEquipment, setInspectionsByEquipment] = useState([]);
@@ -115,6 +115,11 @@ const AdminDashboard = () => {
       const leaders = savedLeaders ? JSON.parse(savedLeaders) : [];
       console.log("Loaded leaders:", leaders.length);
       
+      // Carregar dados de setores do localStorage
+      const savedSectors = localStorage.getItem('gearcheck-sectors');
+      const sectors = savedSectors ? JSON.parse(savedSectors) : [];
+      console.log("Loaded sectors:", sectors.length);
+      
       // Estatísticas gerais
       setStats({
         totalInspections: inspections.length,
@@ -122,7 +127,8 @@ const AdminDashboard = () => {
         completedInspections: inspections.length,
         totalOperators: operators.length,
         totalEquipments: equipments.length,
-        totalLeaders: leaders.length
+        totalLeaders: leaders.length,
+        totalSectors: sectors.length
       });
       
       // Inspeções recentes (últimas 5)
@@ -242,6 +248,12 @@ const AdminDashboard = () => {
             <RefreshCw className="h-4 w-4" />
             Atualizar
           </Button>
+          <Link to="/admin/sectors">
+            <Button variant="outline" className="flex items-center gap-2">
+              <Building2 className="h-4 w-4" />
+              Gerenciar Setores
+            </Button>
+          </Link>
           <Link to="/admin/leaders">
             <Button variant="outline" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
@@ -266,7 +278,7 @@ const AdminDashboard = () => {
         </Alert>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Total de Inspeções</CardTitle>
@@ -311,6 +323,18 @@ const AdminDashboard = () => {
             <div className="text-2xl font-bold">{stats.totalLeaders}</div>
             <p className="text-xs text-muted-foreground">
               Gerenciando setores
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Setores</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.totalSectors}</div>
+            <p className="text-xs text-muted-foreground">
+              Organizados na empresa
             </p>
           </CardContent>
         </Card>

@@ -7,6 +7,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { Operator } from "@/lib/data";
 
 interface ChecklistOperatorSelectProps {
@@ -20,6 +21,16 @@ const ChecklistOperatorSelect: React.FC<ChecklistOperatorSelectProps> = ({
   selectedOperator, 
   onOperatorSelect 
 }) => {
+  // Agrupar operadores por setor
+  const operatorsBySector = operators.reduce((acc, operator) => {
+    const sector = operator.setor || "Sem Setor";
+    if (!acc[sector]) {
+      acc[sector] = [];
+    }
+    acc[sector].push(operator);
+    return acc;
+  }, {} as Record<string, Operator[]>);
+
   return (
     <div className="mb-6">
       <div className="w-full">
@@ -29,10 +40,24 @@ const ChecklistOperatorSelect: React.FC<ChecklistOperatorSelectProps> = ({
           </SelectTrigger>
           <SelectContent>
             {operators && operators.length > 0 ? (
-              operators.map(operator => (
-                <SelectItem key={operator.id} value={operator.id}>
-                  {operator.id} - {operator.name}
-                </SelectItem>
+              Object.entries(operatorsBySector).map(([sector, sectorOperators]) => (
+                <div key={sector}>
+                  <div className="px-2 py-1 text-xs font-semibold text-gray-500 bg-gray-100">
+                    {sector}
+                  </div>
+                  {sectorOperators.map(operator => (
+                    <SelectItem key={operator.id} value={operator.id}>
+                      <div className="flex items-center justify-between w-full">
+                        <span>{operator.id} - {operator.name}</span>
+                        {operator.cargo && (
+                          <Badge variant="secondary" className="ml-2 text-xs">
+                            {operator.cargo}
+                          </Badge>
+                        )}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </div>
               ))
             ) : (
               <SelectItem value="no-operators" disabled>
@@ -51,9 +76,15 @@ const ChecklistOperatorSelect: React.FC<ChecklistOperatorSelectProps> = ({
       {selectedOperator && (
         <div className="mt-3 grid grid-cols-1 gap-3">
           <div className="flex flex-col p-3 bg-blue-50 rounded-md border border-blue-200">
-            <span className="text-sm text-blue-700 font-semibold">Cargo:</span>
-            <span className="text-sm">{selectedOperator.cargo || "Não informado"}</span>
+            <span className="text-sm text-blue-700 font-semibold">Nome:</span>
+            <span className="text-sm">{selectedOperator.name}</span>
           </div>
+          {selectedOperator.cargo && (
+            <div className="flex flex-col p-3 bg-blue-50 rounded-md border border-blue-200">
+              <span className="text-sm text-blue-700 font-semibold">Cargo:</span>
+              <span className="text-sm">{selectedOperator.cargo}</span>
+            </div>
+          )}
           <div className="flex flex-col p-3 bg-blue-50 rounded-md border border-blue-200">
             <span className="text-sm text-blue-700 font-semibold">Setor:</span>
             <span className="text-sm">{selectedOperator.setor || "Não informado"}</span>

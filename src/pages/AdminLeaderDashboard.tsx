@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { 
   Card, 
@@ -43,9 +42,11 @@ import {
   Pencil, 
   Trash, 
   RefreshCw, 
-  Mail
+  Mail,
+  Building2
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Sector } from "@/lib/types";
 
 interface Leader {
   id: string;
@@ -61,11 +62,11 @@ const AdminLeaderDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [dbConnectionStatus, setDbConnectionStatus] = useState<'unchecked' | 'connected' | 'error'>('unchecked');
   const [leaders, setLeaders] = useState<Leader[]>([]);
+  const [sectors, setSectors] = useState<Sector[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [currentLeader, setCurrentLeader] = useState<Leader | null>(null);
-  const [sectors, setSectors] = useState<string[]>([]);
-  const [operators, setOperators] = useState<{id: string, name: string}[]>([]);
+  const [operators, setOperators] = useState<{id: string, name: string, setor?: string}[]>([]);
   const [equipments, setEquipments] = useState<{id: string, name: string, sector: string}[]>([]);
 
   // Form state
@@ -114,10 +115,19 @@ const AdminLeaderDashboard = () => {
       const leadersList = savedLeaders ? JSON.parse(savedLeaders) : [];
       setLeaders(leadersList);
       
+      // Load sectors
+      const savedSectors = localStorage.getItem('gearcheck-sectors');
+      const sectorsList = savedSectors ? JSON.parse(savedSectors) : [];
+      setSectors(sectorsList);
+      
       // Load operators
       const savedOperators = localStorage.getItem('gearcheck-operators');
       const operatorsList = savedOperators ? JSON.parse(savedOperators) : [];
-      setOperators(operatorsList.map(op => ({ id: op.id, name: op.name })));
+      setOperators(operatorsList.map(op => ({ 
+        id: op.id, 
+        name: op.name, 
+        setor: op.setor 
+      })));
       
       // Load equipments
       const savedEquipments = localStorage.getItem('gearcheck-equipments');
@@ -128,9 +138,6 @@ const AdminLeaderDashboard = () => {
         sector: eq.sector
       })));
       
-      // Extract unique sectors from equipment
-      const uniqueSectors = Array.from(new Set(equipmentsList.map(eq => eq.sector)));
-      setSectors(uniqueSectors as string[]);
     } catch (error) {
       console.error('Error loading data:', error);
       toast({
@@ -272,6 +279,16 @@ const AdminLeaderDashboard = () => {
     } else {
       setAssignedEquipments([]);
     }
+
+    // Filter operators by selected sector
+    const sectorOperators = operators.filter(op => op.setor === value);
+    
+    // If there are operators for this sector, pre-select them
+    if (sectorOperators.length > 0) {
+      setAssignedOperators(sectorOperators.map(op => op.id));
+    } else {
+      setAssignedOperators([]);
+    }
   };
 
   const toggleOperator = (operatorId: string) => {
@@ -288,6 +305,19 @@ const AdminLeaderDashboard = () => {
         ? current.filter(id => id !== equipmentId)
         : [...current, equipmentId]
     );
+  };
+
+  const getSectorName = (sectorName: string) => {
+    const sector = sectors.find(s => s.name === sectorName);
+    return sector ? sector.name : sectorName;
+  };
+
+  const getOperatorsForSector = (sectorName: string) => {
+    return operators.filter(op => op.setor === sectorName);
+  };
+
+  const getEquipmentsForSector = (sectorName: string) => {
+    return equipments.filter(eq => eq.sector === sectorName);
   };
 
   if (isLoading) {
@@ -325,7 +355,7 @@ const AdminLeaderDashboard = () => {
               <DialogHeader>
                 <DialogTitle>Adicionar Novo Líder</DialogTitle>
                 <DialogDescription>
-                  Cadastre um novo líder e atribua operadores e equipamentos
+                  Cadastre um novo líder e atribua operadores e equipamentos por setor
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
@@ -361,9 +391,15 @@ const AdminLeaderDashboard = () => {
                         <SelectValue placeholder="Selecione um setor" />
                       </SelectTrigger>
                       <SelectContent>
-                        {sectors.map(sectorName => (
-                          <SelectItem key={sectorName} value={sectorName}>
-                            {sectorName}
+                        {sectors.map(sectorItem => (
+                          <SelectItem key={sectorItem.id} value={sectorItem.name}>
+                            <div className="flex items-center gap-2">
+                              <Building2 className="h-4 w-4" />
+                              {sectorItem.name}
+                              {sectorItem.description && (
+                                <span className="text-xs text-gray-500">- {sectorItem.description}</span>
+                              )}
+                            </div>
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -373,15 +409,15 @@ const AdminLeaderDashboard = () => {
                   {sector && (
                     <>
                       <div className="space-y-2">
-                        <Label>Operadores Atribuídos</Label>
+                        <Label>Operadores do Setor ({getOperatorsForSector(sector).length})</Label>
                         <div className="border rounded-md p-3 max-h-32 overflow-y-auto">
-                          {operators.length === 0 ? (
+                          {getOperatorsForSector(sector).length === 0 ? (
                             <p className="text-sm text-gray-500">
-                              Nenhum operador cadastrado
+                              Nenhum operador cadastrado neste setor
                             </p>
                           ) : (
                             <div className="space-y-2">
-                              {operators.map(operator => (
+                              {getOperatorsForSector(sector).map(operator => (
                                 <div key={operator.id} className="flex items-center">
                                   <input
                                     type="checkbox"
@@ -401,31 +437,28 @@ const AdminLeaderDashboard = () => {
                       </div>
                       
                       <div className="space-y-2">
-                        <Label>Equipamentos Atribuídos</Label>
+                        <Label>Equipamentos do Setor ({getEquipmentsForSector(sector).length})</Label>
                         <div className="border rounded-md p-3 max-h-32 overflow-y-auto">
-                          {equipments.filter(eq => eq.sector === sector).length === 0 ? (
+                          {getEquipmentsForSector(sector).length === 0 ? (
                             <p className="text-sm text-gray-500">
-                              Nenhum equipamento cadastrado para este setor
+                              Nenhum equipamento cadastrado neste setor
                             </p>
                           ) : (
                             <div className="space-y-2">
-                              {equipments
-                                .filter(eq => eq.sector === sector)
-                                .map(equipment => (
-                                  <div key={equipment.id} className="flex items-center">
-                                    <input
-                                      type="checkbox"
-                                      id={`eq-${equipment.id}`}
-                                      className="mr-2"
-                                      checked={assignedEquipments.includes(equipment.id)}
-                                      onChange={() => toggleEquipment(equipment.id)}
-                                    />
-                                    <label htmlFor={`eq-${equipment.id}`} className="text-sm">
-                                      {equipment.name}
-                                    </label>
-                                  </div>
-                                ))
-                              }
+                              {getEquipmentsForSector(sector).map(equipment => (
+                                <div key={equipment.id} className="flex items-center">
+                                  <input
+                                    type="checkbox"
+                                    id={`eq-${equipment.id}`}
+                                    className="mr-2"
+                                    checked={assignedEquipments.includes(equipment.id)}
+                                    onChange={() => toggleEquipment(equipment.id)}
+                                  />
+                                  <label htmlFor={`eq-${equipment.id}`} className="text-sm">
+                                    {equipment.name}
+                                  </label>
+                                </div>
+                              ))}
                             </div>
                           )}
                         </div>
@@ -471,7 +504,7 @@ const AdminLeaderDashboard = () => {
         <CardHeader>
           <CardTitle>Líderes Cadastrados</CardTitle>
           <CardDescription>
-            Gerencie os líderes e suas atribuições de equipamentos e operadores
+            Gerencie os líderes e suas atribuições por setor
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -480,7 +513,7 @@ const AdminLeaderDashboard = () => {
               <Users className="mx-auto h-8 w-8 text-gray-400" />
               <h3 className="mt-2 text-sm font-medium text-gray-900">Nenhum líder cadastrado</h3>
               <p className="mt-1 text-sm text-gray-500">
-                Comece adicionando um novo líder para gerenciar inspeções
+                Comece adicionando um novo líder para gerenciar inspeções por setor
               </p>
               <div className="mt-6">
                 <Button 
@@ -510,7 +543,12 @@ const AdminLeaderDashboard = () => {
                     <TableRow key={leader.id}>
                       <TableCell className="font-medium">{leader.name}</TableCell>
                       <TableCell>{leader.email}</TableCell>
-                      <TableCell>{leader.sector}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Building2 className="h-4 w-4 text-gray-500" />
+                          {getSectorName(leader.sector)}
+                        </div>
+                      </TableCell>
                       <TableCell>
                         <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
                           {leader.assignedOperators?.length || 0}
@@ -556,13 +594,13 @@ const AdminLeaderDashboard = () => {
         </CardContent>
       </Card>
       
-      {/* Edit Dialog */}
+      {/* Edit Dialog - similar structure but with edit functionality */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>Editar Líder</DialogTitle>
             <DialogDescription>
-              Atualize as informações do líder e suas atribuições
+              Atualize as informações do líder e suas atribuições por setor
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -596,9 +634,15 @@ const AdminLeaderDashboard = () => {
                     <SelectValue placeholder="Selecione um setor" />
                   </SelectTrigger>
                   <SelectContent>
-                    {sectors.map(sectorName => (
-                      <SelectItem key={sectorName} value={sectorName}>
-                        {sectorName}
+                    {sectors.map(sectorItem => (
+                      <SelectItem key={sectorItem.id} value={sectorItem.name}>
+                        <div className="flex items-center gap-2">
+                          <Building2 className="h-4 w-4" />
+                          {sectorItem.name}
+                          {sectorItem.description && (
+                            <span className="text-xs text-gray-500">- {sectorItem.description}</span>
+                          )}
+                        </div>
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -608,15 +652,15 @@ const AdminLeaderDashboard = () => {
               {sector && (
                 <>
                   <div className="space-y-2">
-                    <Label>Operadores Atribuídos</Label>
+                    <Label>Operadores do Setor ({getOperatorsForSector(sector).length})</Label>
                     <div className="border rounded-md p-3 max-h-32 overflow-y-auto">
-                      {operators.length === 0 ? (
+                      {getOperatorsForSector(sector).length === 0 ? (
                         <p className="text-sm text-gray-500">
-                          Nenhum operador cadastrado
+                          Nenhum operador cadastrado neste setor
                         </p>
                       ) : (
                         <div className="space-y-2">
-                          {operators.map(operator => (
+                          {getOperatorsForSector(sector).map(operator => (
                             <div key={operator.id} className="flex items-center">
                               <input
                                 type="checkbox"
@@ -636,31 +680,28 @@ const AdminLeaderDashboard = () => {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label>Equipamentos Atribuídos</Label>
+                    <Label>Equipamentos do Setor ({getEquipmentsForSector(sector).length})</Label>
                     <div className="border rounded-md p-3 max-h-32 overflow-y-auto">
-                      {equipments.filter(eq => eq.sector === sector).length === 0 ? (
+                      {getEquipmentsForSector(sector).length === 0 ? (
                         <p className="text-sm text-gray-500">
-                          Nenhum equipamento cadastrado para este setor
+                          Nenhum equipamento cadastrado neste setor
                         </p>
                       ) : (
                         <div className="space-y-2">
-                          {equipments
-                            .filter(eq => eq.sector === sector)
-                            .map(equipment => (
-                              <div key={equipment.id} className="flex items-center">
-                                <input
-                                  type="checkbox"
-                                  id={`edit-eq-${equipment.id}`}
-                                  className="mr-2"
-                                  checked={assignedEquipments.includes(equipment.id)}
-                                  onChange={() => toggleEquipment(equipment.id)}
-                                />
-                                <label htmlFor={`edit-eq-${equipment.id}`} className="text-sm">
-                                  {equipment.name}
-                                </label>
-                              </div>
-                            ))
-                          }
+                          {getEquipmentsForSector(sector).map(equipment => (
+                            <div key={equipment.id} className="flex items-center">
+                              <input
+                                type="checkbox"
+                                id={`edit-eq-${equipment.id}`}
+                                className="mr-2"
+                                checked={assignedEquipments.includes(equipment.id)}
+                                onChange={() => toggleEquipment(equipment.id)}
+                              />
+                              <label htmlFor={`edit-eq-${equipment.id}`} className="text-sm">
+                                {equipment.name}
+                              </label>
+                            </div>
+                          ))}
                         </div>
                       )}
                     </div>

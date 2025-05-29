@@ -11,6 +11,14 @@ export interface ChecklistFormState {
   inspectionDate: string;
 }
 
+// Interface para setores
+export interface Sector {
+  id: string;
+  name: string;
+  description?: string;
+  leaderId?: string;
+}
+
 // Interface para configuração do banco de dados
 export interface DatabaseConfig {
   host: string;
@@ -25,6 +33,7 @@ export interface DatabaseConfig {
 export const CHECKLIST_STORE_KEY = 'gearcheck-current-checklist';
 export const DB_CONFIG_KEY = 'gearcheck-db-config';
 export const INITIAL_DATA_LOADED_KEY = 'gearcheck-initial-data-loaded';
+export const SECTORS_STORE_KEY = 'gearcheck-sectors';
 
 // Estado inicial do checklist
 export const initialChecklistState: ChecklistFormState = {
@@ -46,3 +55,11 @@ export const defaultDbConfig: DatabaseConfig = {
   password: "",
   connectionSuccess: false
 };
+
+// Setores padrão
+export const defaultSectors: Sector[] = [
+  { id: "1", name: "Manutenção", description: "Setor responsável pela manutenção de equipamentos" },
+  { id: "2", name: "Produção", description: "Setor de produção industrial" },
+  { id: "3", name: "Armazém", description: "Setor de armazenamento e logística" },
+  { id: "4", name: "Segurança", description: "Setor de segurança do trabalho" },
+];
