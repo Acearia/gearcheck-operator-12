@@ -124,7 +124,7 @@ const DatabaseConnectionForm = () => {
     setTimeout(() => {
       setConnecting(false);
       
-      if (host === '172.16.5.193' && port === '5432' && user === 'postgres') {
+      if (host === '172.16.5.245' && port === '5432' && user === 'gearcheck') {
         setConnectionSuccess(true);
         
         toast({
@@ -142,9 +142,9 @@ const DatabaseConnectionForm = () => {
   const handleReset = () => {
     setExistingServer("PostgreSQL 17");
     setServerName("PostgreSQL 17");
-    setHost("172.16.5.193");
+    setHost("172.16.5.245");
     setPort("5432");
-    setDatabase("postgres");
+    setDatabase("gearcheck_db");
     setUser("postgres");
     setPassword("");
     setRole("");
