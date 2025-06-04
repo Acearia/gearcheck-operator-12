@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,10 +24,10 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
-import { Eye, Download, Database } from "lucide-react";
+import { Eye, Download, Archive, Database } from "lucide-react";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
-import { Link } from "react-router-dom";
+import { exportLocalData, optimizeLocalStorage } from "@/lib/databaseConfig";
 
 const AdminInspections = () => {
   const { toast } = useToast();
@@ -36,51 +35,21 @@ const AdminInspections = () => {
   const [selectedInspection, setSelectedInspection] = useState<any>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [dbConnectionStatus, setDbConnectionStatus] = useState<'unchecked' | 'connected' | 'error'>('unchecked');
   const [filterEquipment, setFilterEquipment] = useState<string>("all");
   const [filterOperator, setFilterOperator] = useState<string>("all");
   const [uniqueEquipments, setUniqueEquipments] = useState<{id: string, name: string}[]>([]);
   const [uniqueOperators, setUniqueOperators] = useState<{id: string, name: string}[]>([]);
 
   useEffect(() => {
-    checkDatabaseConnection();
+    loadInspections();
   }, []);
 
-  const checkDatabaseConnection = async () => {
-    try {
-      // Verificar se já temos configurações de conexão salvas
-      const dbConfig = localStorage.getItem('gearcheck-db-config');
-      
-      if (!dbConfig) {
-        setDbConnectionStatus('error');
-        setIsLoading(false);
-        return;
-      }
-
-      const { host, port, database, user } = JSON.parse(dbConfig);
-      
-      // Simular verificação de conexão
-      if (host === '172.16.5.193' && port === '5432') {
-        setDbConnectionStatus('connected');
-        loadInspections();
-      } else {
-        setDbConnectionStatus('error');
-        setIsLoading(false);
-      }
-    } catch (error) {
-      console.error('Error checking database connection:', error);
-      setDbConnectionStatus('error');
-      setIsLoading(false);
-    }
-  };
-
   const loadInspections = async () => {
-    // Em um ambiente real, isso seria uma chamada à API para buscar dados do banco
     try {
       // Simular tempo de carregamento
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 500));
       
-      // Carregar do localStorage como backup
+      // Carregar do localStorage
       const savedData = localStorage.getItem('gearcheck-inspections');
       let loadedInspections = [];
       
@@ -114,7 +83,7 @@ const AdminInspections = () => {
       console.error('Error loading inspections:', error);
       toast({
         title: "Erro ao carregar inspeções",
-        description: "Não foi possível carregar as inspeções do banco de dados.",
+        description: "Não foi possível carregar as inspeções do armazenamento local.",
         variant: "destructive",
       });
     } finally {
@@ -128,11 +97,39 @@ const AdminInspections = () => {
   };
 
   const handleExportCSV = () => {
-    // Lógica para exportar para CSV
-    toast({
-      title: "Exportação iniciada",
-      description: "Os dados das inspeções estão sendo exportados para CSV.",
-    });
+    try {
+      exportLocalData();
+      toast({
+        title: "Backup criado",
+        description: "Dados exportados com sucesso para arquivo JSON.",
+      });
+    } catch (error) {
+      toast({
+        title: "Erro na exportação",
+        description: "Não foi possível exportar os dados.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleOptimizeStorage = () => {
+    try {
+      const result = optimizeLocalStorage();
+      if (result) {
+        toast({
+          title: "Armazenamento otimizado",
+          description: `${result.activeInspections} inspeções ativas, ${result.archivedInspections} arquivadas.`,
+        });
+        // Recarregar dados após otimização
+        loadInspections();
+      }
+    } catch (error) {
+      toast({
+        title: "Erro na otimização",
+        description: "Não foi possível otimizar o armazenamento.",
+        variant: "destructive",
+      });
+    }
   };
 
   const filteredInspections = inspections.filter((inspection) => {
@@ -156,26 +153,25 @@ const AdminInspections = () => {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Inspeções</h1>
-        <Button onClick={handleExportCSV} className="bg-green-600 hover:bg-green-700">
-          <Download className="mr-2 h-4 w-4" />
-          Exportar CSV
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={handleOptimizeStorage} variant="outline">
+            <Archive className="mr-2 h-4 w-4" />
+            Otimizar
+          </Button>
+          <Button onClick={handleExportCSV} className="bg-green-600 hover:bg-green-700">
+            <Download className="mr-2 h-4 w-4" />
+            Backup
+          </Button>
+        </div>
       </div>
 
-      {dbConnectionStatus === 'error' && (
-        <Alert variant="destructive">
-          <Database className="h-4 w-4" />
-          <AlertTitle>Problemas de conexão</AlertTitle>
-          <AlertDescription className="flex justify-between items-center">
-            <span>Não foi possível conectar ao banco de dados.</span>
-            <Link to="/admin/database">
-              <Button variant="outline" size="sm">
-                Configurar Conexão
-              </Button>
-            </Link>
-          </AlertDescription>
-        </Alert>
-      )}
+      <Alert className="bg-blue-50 border-blue-200">
+        <Database className="h-4 w-4 text-blue-600" />
+        <AlertTitle className="text-blue-700">Sistema Local Ativo</AlertTitle>
+        <AlertDescription className="text-blue-600">
+          Dados armazenados localmente. Total: {inspections.length} inspeções. Faça backup regularmente para não perder dados.
+        </AlertDescription>
+      </Alert>
 
       <Card>
         <CardHeader>

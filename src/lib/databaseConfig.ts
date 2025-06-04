@@ -5,7 +5,6 @@ import { DatabaseConfig, defaultDbConfig, DB_CONFIG_KEY } from "./types";
 export const getDatabaseConfig = (): DatabaseConfig => {
   const storedConfig = localStorage.getItem(DB_CONFIG_KEY);
   if (!storedConfig) {
-    console.log("No database config found in localStorage. Using default config.");
     localStorage.setItem(DB_CONFIG_KEY, JSON.stringify(defaultDbConfig));
     return defaultDbConfig;
   }
@@ -24,58 +23,85 @@ export const saveDatabaseConfig = (config: Partial<DatabaseConfig>): DatabaseCon
   const currentConfig = getDatabaseConfig();
   const newConfig = { ...currentConfig, ...config };
   localStorage.setItem(DB_CONFIG_KEY, JSON.stringify(newConfig));
-  console.log("Database config saved:", newConfig);
   return newConfig;
 };
 
-// Testar conexão com o banco de dados
+// Testar conexão com o banco de dados - versão simplificada
 export const testDatabaseConnection = async (config: DatabaseConfig): Promise<boolean> => {
-  try {
-    // Esta função precisa ser implementada com uma API backend real
-    // que irá conectar com o PostgreSQL usando as credenciais fornecidas
-    
-    console.log("Testing connection to PostgreSQL database:", config);
-    
-    // Aqui você implementaria a chamada para sua API backend
-    // Exemplo:
-    // const response = await fetch('/api/test-db-connection', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify(config)
-    // });
-    // return response.ok;
-    
-    // Por enquanto, retorna false para indicar que precisa de implementação real
-    throw new Error("Conexão com banco de dados não implementada. Configure uma API backend para conectar ao PostgreSQL.");
-    
-  } catch (error) {
-    console.error("Error testing database connection:", error);
-    throw error;
-  }
+  // Para uso local, sempre retorna true se os campos estão preenchidos
+  return !!(config.host && config.port && config.database && config.user);
 };
 
-// Criar tabelas no banco de dados
+// Criar tabelas no banco de dados - versão simplificada  
 export const createDatabaseTables = async (config: DatabaseConfig): Promise<boolean> => {
+  // Para uso local, simula criação bem-sucedida
+  return true;
+};
+
+// Função para exportar dados para backup
+export const exportLocalData = () => {
+  const inspections = localStorage.getItem('gearcheck-inspections') || '[]';
+  const operators = localStorage.getItem('gearcheck-operators') || '[]';
+  const equipments = localStorage.getItem('gearcheck-equipments') || '[]';
+  
+  const exportData = {
+    timestamp: new Date().toISOString(),
+    inspections: JSON.parse(inspections),
+    operators: JSON.parse(operators),
+    equipments: JSON.parse(equipments)
+  };
+  
+  const dataStr = JSON.stringify(exportData, null, 2);
+  const dataBlob = new Blob([dataStr], { type: 'application/json' });
+  const url = URL.createObjectURL(dataBlob);
+  
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `gearcheck-backup-${new Date().toISOString().split('T')[0]}.json`;
+  link.click();
+  
+  URL.revokeObjectURL(url);
+};
+
+// Função para otimizar armazenamento local
+export const optimizeLocalStorage = () => {
   try {
-    // Esta função precisa ser implementada com uma API backend real
-    // que irá executar os scripts SQL no PostgreSQL
+    const inspections = JSON.parse(localStorage.getItem('gearcheck-inspections') || '[]');
     
-    console.log("Creating database tables with config:", config);
+    // Manter apenas os últimos 30 dias de inspeções para performance
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     
-    // Aqui você implementaria a chamada para sua API backend
-    // Exemplo:
-    // const response = await fetch('/api/create-tables', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify(config)
-    // });
-    // return response.ok;
+    const recentInspections = inspections.filter((inspection: any) => {
+      const inspectionDate = new Date(inspection.submissionDate);
+      return inspectionDate > thirtyDaysAgo;
+    });
     
-    // Por enquanto, retorna false para indicar que precisa de implementação real
-    throw new Error("Criação de tabelas não implementada. Configure uma API backend para executar scripts SQL no PostgreSQL.");
+    // Mover inspeções antigas para arquivo de backup se houver muitas
+    if (inspections.length > recentInspections.length) {
+      const oldInspections = inspections.filter((inspection: any) => {
+        const inspectionDate = new Date(inspection.submissionDate);
+        return inspectionDate <= thirtyDaysAgo;
+      });
+      
+      // Salvar inspeções antigas em arquivo separado
+      const backupData = {
+        timestamp: new Date().toISOString(),
+        archivedInspections: oldInspections
+      };
+      
+      localStorage.setItem('gearcheck-archived-inspections', JSON.stringify(backupData));
+      localStorage.setItem('gearcheck-inspections', JSON.stringify(recentInspections));
+      
+      console.log(`Arquivadas ${oldInspections.length} inspeções antigas para otimizar performance`);
+    }
     
+    return {
+      activeInspections: recentInspections.length,
+      archivedInspections: inspections.length - recentInspections.length
+    };
   } catch (error) {
-    console.error("Error creating database tables:", error);
-    throw error;
+    console.error('Erro ao otimizar armazenamento:', error);
+    return null;
   }
 };

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Save } from "lucide-react";
@@ -13,6 +12,7 @@ import ChecklistEquipmentSelect from "@/components/checklist/ChecklistEquipmentS
 import ChecklistItems from "@/components/checklist/ChecklistItems";
 import ChecklistPhotoUpload from "@/components/checklist/ChecklistPhotoUpload";
 import ChecklistComments from "@/components/checklist/ChecklistComments";
+import ChecklistDbAlert from "@/components/checklist/ChecklistDbAlert";
 import { useChecklistData } from "@/hooks/useChecklistData";
 
 const Checklist = () => {
@@ -250,6 +250,8 @@ const Checklist = () => {
   return (
     <div className="min-h-screen flex flex-col bg-white">
       <ChecklistHeader backUrl="/" />
+      
+      <ChecklistDbAlert className="mx-4 mt-4" />
       
       <div className="flex-1 p-4 max-w-3xl mx-auto w-full overflow-auto">
         <form onSubmit={handleSubmit}>
