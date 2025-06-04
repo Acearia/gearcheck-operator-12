@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { 
   Card, 
@@ -14,12 +15,11 @@ import { Link } from "react-router-dom";
 import { CheckCircle, Database, AlertCircle, RefreshCw, Users, Building2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { operators as initialOperators, equipments as initialEquipments } from "@/lib/data";
-import { initializeDefaultData, getDatabaseConfig } from "@/lib/checklistStore";
+import { initializeDefaultData } from "@/lib/checklistStore";
 
 const AdminDashboard = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
-  const [dbConnectionStatus, setDbConnectionStatus] = useState<'unchecked' | 'connected' | 'error'>('unchecked');
   const [stats, setStats] = useState({
     totalInspections: 0,
     pendingInspections: 0,
@@ -42,42 +42,9 @@ const AdminDashboard = () => {
     // Garantir que os dados iniciais estejam carregados
     initializeDefaultData();
     
-    // Verificar a conexão com o banco de dados
-    checkDatabaseConnection();
+    // Carregar dados do dashboard
+    loadDashboardData();
   }, [refreshTrigger]); // Adicionar refreshTrigger como dependência
-
-  const checkDatabaseConnection = async () => {
-    try {
-      console.log("Checking database connection...");
-      const dbConfig = getDatabaseConfig();
-      
-      if (!dbConfig) {
-        setDbConnectionStatus('error');
-        setIsLoading(false);
-        console.log("No DB config found");
-        return;
-      } else {
-        console.log("DB Config found:", dbConfig);
-      }
-
-      // Verifica se já houve uma conexão bem-sucedida anteriormente
-      if (dbConfig.connectionSuccess) {
-        console.log("Previously successful connection detected");
-        setDbConnectionStatus('connected');
-      } else {
-        console.log("No successful connection detected");
-        setDbConnectionStatus('error');
-      }
-
-      // Carrega os dados do dashboard de qualquer forma
-      loadDashboardData();
-      
-    } catch (error) {
-      console.error('Error checking database connection:', error);
-      setDbConnectionStatus('error');
-      setIsLoading(false);
-    }
-  };
 
   const loadDashboardData = async () => {
     try {
@@ -262,21 +229,6 @@ const AdminDashboard = () => {
           </Link>
         </div>
       </div>
-      
-      {dbConnectionStatus === 'error' && (
-        <Alert variant="destructive">
-          <Database className="h-4 w-4" />
-          <AlertTitle>Problemas de conexão</AlertTitle>
-          <AlertDescription className="flex justify-between items-center">
-            <span>Não foi possível conectar ao banco de dados.</span>
-            <Link to="/admin/login?redirect=/admin/database">
-              <Button variant="outline" size="sm">
-                Configurar Conexão
-              </Button>
-            </Link>
-          </AlertDescription>
-        </Alert>
-      )}
 
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <Card>
