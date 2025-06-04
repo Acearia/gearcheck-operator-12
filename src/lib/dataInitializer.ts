@@ -33,7 +33,7 @@ export const initializeDefaultData = () => {
   if (isInitialized === 'true') {
     console.log("Data was already initialized. Checking consistency...");
     
-    // Mesmo já tendo inicializado, verificar se os dados estão consistentes
+    // Verificar se os dados estão consistentes
     const operatorsData = localStorage.getItem('gearcheck-operators');
     const equipmentsData = localStorage.getItem('gearcheck-equipments');
     
@@ -82,7 +82,6 @@ export const initializeDefaultData = () => {
       checkInitializationComplete();
     } catch (e) {
       console.error("Error parsing operators in localStorage:", e);
-      // Em caso de operadores inválidos no localStorage, tenta inicializar novamente
       import('./data').then(({ operators }) => {
         localStorage.setItem('gearcheck-operators', JSON.stringify(operators));
         console.log('Operadores recarregados com sucesso após erro');

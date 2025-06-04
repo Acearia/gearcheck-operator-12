@@ -6,7 +6,6 @@ export const getDatabaseConfig = (): DatabaseConfig => {
   const storedConfig = localStorage.getItem(DB_CONFIG_KEY);
   if (!storedConfig) {
     console.log("No database config found in localStorage. Using default config.");
-    // Salvar a configuração padrão se não existir
     localStorage.setItem(DB_CONFIG_KEY, JSON.stringify(defaultDbConfig));
     return defaultDbConfig;
   }
@@ -15,7 +14,6 @@ export const getDatabaseConfig = (): DatabaseConfig => {
     return JSON.parse(storedConfig);
   } catch (e) {
     console.error('Erro ao analisar configuração do banco de dados:', e);
-    // Em caso de erro, resetar para os valores padrão
     localStorage.setItem(DB_CONFIG_KEY, JSON.stringify(defaultDbConfig));
     return defaultDbConfig;
   }
@@ -33,52 +31,51 @@ export const saveDatabaseConfig = (config: Partial<DatabaseConfig>): DatabaseCon
 // Testar conexão com o banco de dados
 export const testDatabaseConnection = async (config: DatabaseConfig): Promise<boolean> => {
   try {
-    // Esta função seria implementada usando uma API ou função serverless
-    // para testar a conexão com o banco de dados real
+    // Esta função precisa ser implementada com uma API backend real
+    // que irá conectar com o PostgreSQL usando as credenciais fornecidas
     
-    // Em um ambiente real, usaríamos o pg para fazer isso,
-    // mas como estamos em frontend puro, simularemos o teste
-    
-    // Aplicação real precisaria usar uma API ou serverless function
     console.log("Testing connection to PostgreSQL database:", config);
     
-    // Simulação de teste de conexão
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Aqui você implementaria a chamada para sua API backend
+    // Exemplo:
+    // const response = await fetch('/api/test-db-connection', {
+    //   method: 'POST',
+    //   headers: { 'Content-Type': 'application/json' },
+    //   body: JSON.stringify(config)
+    // });
+    // return response.ok;
     
-    if (config.host && config.port && config.database && config.user) {
-      if (config.host === 'localhost' || config.host === '127.0.0.1') {
-        console.log("Local database connection test passed");
-        return true;
-      } else {
-        // Simular conexão bem-sucedida quando usar o endereço do laboratório
-        if (config.host === '172.16.5.193' && config.port === '5432') {
-          console.log("Remote database connection test passed");
-          return true;
-        }
-      }
-    }
+    // Por enquanto, retorna false para indicar que precisa de implementação real
+    throw new Error("Conexão com banco de dados não implementada. Configure uma API backend para conectar ao PostgreSQL.");
     
-    console.log("Database connection test failed");
-    return false;
   } catch (error) {
     console.error("Error testing database connection:", error);
-    return false;
+    throw error;
   }
 };
 
 // Criar tabelas no banco de dados
 export const createDatabaseTables = async (config: DatabaseConfig): Promise<boolean> => {
   try {
-    // Esta função seria implementada usando uma API ou função serverless
-    // para criar tabelas no banco de dados real
+    // Esta função precisa ser implementada com uma API backend real
+    // que irá executar os scripts SQL no PostgreSQL
     
-    // Simulação de criação de tabelas
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    console.log("Creating database tables with config:", config);
     
-    console.log("Database tables created successfully");
-    return true;
+    // Aqui você implementaria a chamada para sua API backend
+    // Exemplo:
+    // const response = await fetch('/api/create-tables', {
+    //   method: 'POST',
+    //   headers: { 'Content-Type': 'application/json' },
+    //   body: JSON.stringify(config)
+    // });
+    // return response.ok;
+    
+    // Por enquanto, retorna false para indicar que precisa de implementação real
+    throw new Error("Criação de tabelas não implementada. Configure uma API backend para executar scripts SQL no PostgreSQL.");
+    
   } catch (error) {
     console.error("Error creating database tables:", error);
-    return false;
+    throw error;
   }
 };

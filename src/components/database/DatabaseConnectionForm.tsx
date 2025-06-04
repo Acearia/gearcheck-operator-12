@@ -4,13 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
-import { 
   Table, 
   TableBody, 
   TableCell, 
@@ -26,30 +19,21 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { 
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { X, ChevronDown, Plus, Trash2, RotateCcw, Database, AlertCircle, Check, Loader2 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getDatabaseConfig, saveDatabaseConfig } from "@/lib/checklistStore";
+import { getDatabaseConfig, saveDatabaseConfig, testDatabaseConnection, createDatabaseTables } from "@/lib/databaseConfig";
 
 const DatabaseConnectionForm = () => {
   const { toast } = useToast();
-  const [existingServer, setExistingServer] = useState<string>("PostgreSQL 17");
-  const [serverName, setServerName] = useState<string>("PostgreSQL 17");
-  const [host, setHost] = useState<string>("172.16.5.193");
+  const [host, setHost] = useState<string>("localhost");
   const [port, setPort] = useState<string>("5432");
   const [database, setDatabase] = useState<string>("postgres");
   const [user, setUser] = useState<string>("postgres");
   const [password, setPassword] = useState<string>("");
-  const [role, setRole] = useState<string>("");
-  const [service, setService] = useState<string>("");
   const [connecting, setConnecting] = useState<boolean>(false);
   const [connectionError, setConnectionError] = useState<string>("");
   const [connectionSuccess, setConnectionSuccess] = useState<boolean>(false);
@@ -59,13 +43,7 @@ const DatabaseConnectionForm = () => {
   const [tablesCreated, setTablesCreated] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<string>("connection");
   
-  const [parameters, setParameters] = useState([
-    { name: "SSL mode", keyword: "sslmode", value: "prefer" },
-    { name: "Connection timeout (seconds)", keyword: "connect_timeout", value: "10" }
-  ]);
-
   useEffect(() => {
-    // Usar a função getDatabaseConfig para carregar as configurações salvas
     const config = getDatabaseConfig();
     setHost(config.host);
     setPort(config.port);
@@ -75,7 +53,7 @@ const DatabaseConnectionForm = () => {
     if (config.connectionSuccess) setConnectionSuccess(true);
   }, []);
 
-  const handleConnect = () => {
+  const handleConnect = async () => {
     setConnecting(true);
     setConnectionError("");
     setConnectionSuccess(false);
@@ -86,75 +64,64 @@ const DatabaseConnectionForm = () => {
       return;
     }
 
-    // Simulação de conexão com o banco de dados real
-    setTimeout(() => {
+    try {
+      const connectionConfig = { host, port, database, user, password, connectionSuccess: false };
+      const isConnected = await testDatabaseConnection(connectionConfig);
+      
+      if (isConnected) {
+        setConnectionSuccess(true);
+        const updatedConfig = { ...connectionConfig, connectionSuccess: true };
+        saveDatabaseConfig(updatedConfig);
+        
+        toast({
+          title: "Conexão Bem-sucedida",
+          description: "Conectado com sucesso ao PostgreSQL no endereço " + host,
+        });
+        
+        setOpenSchemaDialog(true);
+      } else {
+        setConnectionError("Não foi possível conectar ao banco de dados. Verifique as configurações e tente novamente.");
+      }
+    } catch (error) {
+      setConnectionError("Erro ao conectar com o banco de dados: " + (error as Error).message);
+    } finally {
       setConnecting(false);
-      
-      // Aqui você poderia implementar uma chamada real para testar a conexão
-      // com o banco de dados PostgreSQL usando uma API
-      
-      setConnectionSuccess(true);
-      
-      const connectionConfig = {
-        host,
-        port,
-        database,
-        user,
-        password,
-        connectionSuccess: true
-      };
-      
-      // Usar a função saveDatabaseConfig para salvar as configurações
-      saveDatabaseConfig(connectionConfig);
-      
-      toast({
-        title: "Conexão Bem-sucedida",
-        description: "Conectado com sucesso ao PostgreSQL no endereço " + host,
-      });
-      
-      setOpenSchemaDialog(true);
-    }, 1500);
+    }
   };
 
-  const handleTestConnection = () => {
+  const handleTestConnection = async () => {
     setConnecting(true);
     setConnectionError("");
     setConnectionSuccess(false);
     
-    setTimeout(() => {
-      setConnecting(false);
+    try {
+      const connectionConfig = { host, port, database, user, password, connectionSuccess: false };
+      const isConnected = await testDatabaseConnection(connectionConfig);
       
-      if (host === '172.16.5.245' && port === '5432' && user === 'gearcheck') {
+      if (isConnected) {
         setConnectionSuccess(true);
-        
         toast({
-          title: "Conexão de Teste Bem-sucedida",
+          title: "Teste de Conexão Bem-sucedido",
           description: "Conexão estabelecida com sucesso! O servidor PostgreSQL está respondendo.",
         });
       } else {
-        setConnectionError(
-          "Erro ao testar conexão. Verifique se os dados estão corretos e tente novamente."
-        );
+        setConnectionError("Erro ao testar conexão. Verifique se os dados estão corretos e o servidor está acessível.");
       }
-    }, 1500);
+    } catch (error) {
+      setConnectionError("Erro ao testar conexão: " + (error as Error).message);
+    } finally {
+      setConnecting(false);
+    }
   };
 
   const handleReset = () => {
-    setExistingServer("PostgreSQL 17");
-    setServerName("PostgreSQL 17");
-    setHost("172.16.5.245");
+    setHost("localhost");
     setPort("5432");
-    setDatabase("gearcheck_db");
+    setDatabase("postgres");
     setUser("postgres");
     setPassword("");
-    setRole("");
-    setService("");
     setConnectionError("");
     setConnectionSuccess(false);
-    setParameters([
-      { name: "SSL mode", keyword: "sslmode", value: "prefer" },
-      { name: "Connection timeout (seconds)", keyword: "connect_timeout", value: "10" }
-    ]);
     
     toast({
       title: "Formulário Resetado",
@@ -162,35 +129,39 @@ const DatabaseConnectionForm = () => {
     });
   };
 
-  const addParameter = () => {
-    setParameters([...parameters, { name: "", keyword: "", value: "" }]);
-  };
-
-  const removeParameter = (index: number) => {
-    setParameters(parameters.filter((_, i) => i !== index));
-  };
-
-  const updateParameter = (index: number, field: 'name' | 'keyword' | 'value', value: string) => {
-    const newParameters = [...parameters];
-    newParameters[index][field] = value;
-    setParameters(newParameters);
-  };
-
-  const createTables = () => {
+  const createTables = async () => {
     setCreatingTables(true);
     
-    setTimeout(() => {
-      setCreatingTables(false);
-      setTablesCreated(true);
-      setOpenSchemaDialog(false);
+    try {
+      const config = getDatabaseConfig();
+      const success = await createDatabaseTables(config);
       
+      if (success) {
+        setTablesCreated(true);
+        setOpenSchemaDialog(false);
+        
+        toast({
+          title: "Tabelas Criadas com Sucesso",
+          description: "As tabelas necessárias foram criadas no banco de dados.",
+        });
+        
+        setActiveTab("query");
+      } else {
+        toast({
+          title: "Erro ao Criar Tabelas",
+          description: "Não foi possível criar as tabelas no banco de dados.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
       toast({
-        title: "Tabelas Criadas com Sucesso",
-        description: "As tabelas necessárias foram criadas no banco de dados.",
+        title: "Erro ao Criar Tabelas",
+        description: "Erro: " + (error as Error).message,
+        variant: "destructive",
       });
-      
-      setActiveTab("query");
-    }, 2000);
+    } finally {
+      setCreatingTables(false);
+    }
   };
 
   return (
@@ -206,10 +177,10 @@ const DatabaseConnectionForm = () => {
           <CardHeader className="bg-gray-50 border-b">
             <CardTitle className="text-xl flex items-center">
               <Database className="mr-2 h-5 w-5" />
-              Conectar ao Servidor
+              Conectar ao Servidor PostgreSQL
             </CardTitle>
             <CardDescription>
-              Preencha os detalhes para conectar ao seu banco de dados PostgreSQL
+              Configure a conexão com seu banco de dados PostgreSQL
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-6 space-y-4">
@@ -224,16 +195,16 @@ const DatabaseConnectionForm = () => {
             {connectionSuccess && (
               <Alert className="mb-4 bg-green-50 border-green-200">
                 <Check className="h-4 w-4 text-green-600" />
-                <AlertTitle className="text-green-600">Conexão Bem-sucedida</AlertTitle>
+                <AlertTitle className="text-green-600">Conexão Estabelecida</AlertTitle>
                 <AlertDescription className="text-green-600">
-                  Conexão estabelecida com o banco de dados. Você pode prosseguir com as operações.
+                  Conectado com sucesso ao banco de dados PostgreSQL.
                 </AlertDescription>
               </Alert>
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
               <Label htmlFor="host" className="text-sm font-medium">
-                Nome/endereço do Host
+                Host
               </Label>
               <div className="col-span-2">
                 <Input 
@@ -263,7 +234,7 @@ const DatabaseConnectionForm = () => {
               <Label htmlFor="database" className="text-sm font-medium">
                 Banco de Dados
               </Label>
-              <div className="col-span-2 relative">
+              <div className="col-span-2">
                 <Input
                   id="database"
                   value={database}
@@ -277,7 +248,7 @@ const DatabaseConnectionForm = () => {
               <Label htmlFor="user" className="text-sm font-medium">
                 Usuário
               </Label>
-              <div className="col-span-2 relative">
+              <div className="col-span-2">
                 <Input
                   id="user"
                   value={user}
@@ -297,19 +268,9 @@ const DatabaseConnectionForm = () => {
                   type="password"
                   value={password} 
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Senha"
+                  placeholder="Senha do banco de dados"
                 />
               </div>
-            </div>
-
-            <div className="bg-blue-50 p-4 rounded-md border border-blue-100 mt-6">
-              <h3 className="text-blue-800 font-medium flex items-center">
-                <AlertCircle className="h-4 w-4 mr-2" />
-                Configuração Atual
-              </h3>
-              <p className="text-sm text-blue-700 mt-2">
-                Seu servidor PostgreSQL está rodando em <strong>{host}:{port}</strong>. Certifique-se de que o servidor está aceitando conexões remotas e que a senha está correta.
-              </p>
             </div>
           </CardContent>
           <CardFooter className="flex justify-between space-x-2 bg-gray-50 border-t py-4">
