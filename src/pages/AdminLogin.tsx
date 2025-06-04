@@ -27,7 +27,7 @@ const AdminLogin = () => {
     // IMPORTANT: In a production app, replace this with Supabase auth
     if (username === "admin" && password === "admin123") {
       // Store auth state in localStorage
-      localStorage.setItem("gearcheck-admin-auth", "true");
+      localStorage.setItem("checklist-afm-admin-auth", "true");
       
       toast({
         title: "Login realizado com sucesso",
@@ -64,7 +64,7 @@ const AdminLogin = () => {
               <Lock size={24} />
             </div>
           </div>
-          <CardTitle className="text-2xl text-center">GearCheck Admin</CardTitle>
+          <CardTitle className="text-2xl text-center">Checklist AFM Admin</CardTitle>
           <CardDescription className="text-center">
             Entre com suas credenciais de administrador
           </CardDescription>

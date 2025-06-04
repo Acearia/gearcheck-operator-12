@@ -10,7 +10,7 @@ const Index = () => {
   return (
     <div className="min-h-screen flex flex-col bg-white">
       <header className="bg-red-700 text-white px-4 py-3 shadow-md flex justify-center items-center">
-        <h1 className="font-bold text-lg">Inspeção de Equipamentos</h1>
+        <h1 className="font-bold text-lg">Checklist AFM</h1>
       </header>
 
       <div className="flex-1 flex items-center justify-center p-4">
@@ -25,7 +25,7 @@ const Index = () => {
             <Card>
               <CardContent className="pt-6 flex flex-col items-center">
                 <div className="text-center mb-8">
-                  <h2 className="text-2xl font-bold text-gray-800 mb-2">Bem-vindo ao GearCheck</h2>
+                  <h2 className="text-2xl font-bold text-gray-800 mb-2">Bem-vindo ao Checklist AFM</h2>
                   <p className="text-gray-600">Sistema de inspeção de equipamentos</p>
                 </div>
                 
