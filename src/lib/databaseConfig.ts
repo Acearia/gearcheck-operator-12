@@ -1,44 +1,5 @@
 
-import { DatabaseConfig, defaultDbConfig, DB_CONFIG_KEY } from "./types";
-
-// Obter configuração do banco de dados
-export const getDatabaseConfig = (): DatabaseConfig => {
-  const storedConfig = localStorage.getItem(DB_CONFIG_KEY);
-  if (!storedConfig) {
-    localStorage.setItem(DB_CONFIG_KEY, JSON.stringify(defaultDbConfig));
-    return defaultDbConfig;
-  }
-  
-  try {
-    return JSON.parse(storedConfig);
-  } catch (e) {
-    console.error('Erro ao analisar configuração do banco de dados:', e);
-    localStorage.setItem(DB_CONFIG_KEY, JSON.stringify(defaultDbConfig));
-    return defaultDbConfig;
-  }
-};
-
-// Salvar configuração do banco de dados
-export const saveDatabaseConfig = (config: Partial<DatabaseConfig>): DatabaseConfig => {
-  const currentConfig = getDatabaseConfig();
-  const newConfig = { ...currentConfig, ...config };
-  localStorage.setItem(DB_CONFIG_KEY, JSON.stringify(newConfig));
-  return newConfig;
-};
-
-// Testar conexão com o banco de dados - versão simplificada
-export const testDatabaseConnection = async (config: DatabaseConfig): Promise<boolean> => {
-  // Para uso local, sempre retorna true se os campos estão preenchidos
-  return !!(config.host && config.port && config.database && config.user);
-};
-
-// Criar tabelas no banco de dados - versão simplificada  
-export const createDatabaseTables = async (config: DatabaseConfig): Promise<boolean> => {
-  // Para uso local, simula criação bem-sucedida
-  return true;
-};
-
-// Função para exportar dados para backup
+// Funções utilitárias para backup e otimização local apenas
 export const exportLocalData = () => {
   const inspections = localStorage.getItem('gearcheck-inspections') || '[]';
   const operators = localStorage.getItem('gearcheck-operators') || '[]';

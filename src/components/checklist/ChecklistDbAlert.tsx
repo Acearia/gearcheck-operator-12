@@ -48,11 +48,11 @@ const ChecklistDbAlert: React.FC<ChecklistDbAlertProps> = ({ className = "" }) =
   };
   
   return (
-    <Alert className={`bg-blue-50 border-blue-200 ${className}`}>
-      <Download className="h-4 w-4 text-blue-600" />
-      <AlertTitle className="text-blue-700">Sistema Local Ativo</AlertTitle>
-      <AlertDescription className="flex justify-between items-center text-blue-600">
-        <span>Dados salvos localmente. Faça backup regularmente.</span>
+    <Alert className={`bg-orange-50 border-orange-200 ${className}`}>
+      <Download className="h-4 w-4 text-orange-600" />
+      <AlertTitle className="text-orange-700">Sistema Local Temporário</AlertTitle>
+      <AlertDescription className="flex justify-between items-center text-orange-600">
+        <span>Dados salvos localmente. Migre para o backend para persistência real.</span>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={handleOptimizeStorage}>
             <Archive className="h-3 w-3 mr-1" />

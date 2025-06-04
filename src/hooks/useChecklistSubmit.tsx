@@ -3,7 +3,6 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { getChecklistState, saveChecklistState, clearChecklistState } from "@/lib/checklistStore";
-import { isDatabaseConnected } from "@/lib/dataInitializer";
 
 export const useChecklistSubmit = () => {
   const navigate = useNavigate();
@@ -14,7 +13,6 @@ export const useChecklistSubmit = () => {
   const [inspectionDate] = useState<string>(
     currentState.inspectionDate || new Date().toISOString().split('T')[0]
   );
-  const [dbConnectionStatus, setDbConnectionStatus] = useState<'unchecked' | 'connected' | 'error'>('unchecked');
 
   useEffect(() => {
     // Verify if previous steps were completed
@@ -23,19 +21,11 @@ export const useChecklistSubmit = () => {
       return;
     }
 
-    // Check database connection
-    checkDatabaseConnection();
-
     // Load signature if it exists
     if (currentState.signature) {
       setSignature(currentState.signature);
     }
   }, [navigate, currentState.operator, currentState.equipment, currentState.checklist]);
-
-  const checkDatabaseConnection = () => {
-    const isConnected = isDatabaseConnected();
-    setDbConnectionStatus(isConnected ? 'connected' : 'error');
-  };
 
   const handleBack = () => {
     // Save signature before going back
@@ -78,22 +68,10 @@ export const useChecklistSubmit = () => {
       const updatedInspections = [formData, ...existingInspections];
       localStorage.setItem('gearcheck-inspections', JSON.stringify(updatedInspections));
 
-      // If database is connected, try to save data to database
-      if (dbConnectionStatus === 'connected') {
-        console.log('Database connected, trying to save inspection to PostgreSQL');
-        // Logic for saving to a real database would be implemented here
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        toast({
-          title: "Dados sincronizados",
-          description: "Inspeção salva localmente e sincronizada com o banco de dados.",
-        });
-      } else {
-        toast({
-          title: "Dados salvos localmente",
-          description: "Inspeção salva no armazenamento local. Sincronize com o banco de dados quando disponível.",
-        });
-      }
+      toast({
+        title: "Dados salvos localmente",
+        description: "Inspeção salva no armazenamento local. Conecte ao backend para persistência real.",
+      });
 
       // Check if there's a leader for this equipment's sector
       try {
@@ -103,10 +81,9 @@ export const useChecklistSubmit = () => {
           const sectorLeaders = leaders.filter(leader => leader.sector === currentState.equipment?.sector);
           
           if (sectorLeaders.length > 0) {
-            // If we have leaders for this sector, simulate sending email notification
             toast({
-              title: "Notificação enviada",
-              description: `${sectorLeaders.length} líder(es) do setor ${currentState.equipment?.sector} foram notificados`,
+              title: "Notificação simulada",
+              description: `${sectorLeaders.length} líder(es) do setor ${currentState.equipment?.sector} seriam notificados`,
             });
           }
         }
@@ -161,7 +138,6 @@ export const useChecklistSubmit = () => {
     currentState,
     isSaving,
     inspectionDate,
-    dbConnectionStatus,
     getChecklistSummary,
     handleBack,
     handleSubmit

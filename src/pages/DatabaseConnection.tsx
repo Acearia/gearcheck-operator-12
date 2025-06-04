@@ -1,73 +1,15 @@
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Home, Database, RefreshCw } from "lucide-react";
-import DatabaseConnectionForm from "@/components/database/DatabaseConnectionForm";
-import { initializeDefaultData, isDatabaseConnected } from "@/lib/dataInitializer";
-import { getDatabaseConfig } from "@/lib/databaseConfig";
+import { ArrowLeft, Home, AlertCircle } from "lucide-react";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { useToast } from "@/hooks/use-toast";
 
 const DatabaseConnection = () => {
-  const { toast } = useToast();
-  const [isInitializing, setIsInitializing] = useState(true);
-  const [dbConfig, setDbConfig] = useState<any>(null);
-  const [connectionStatus, setConnectionStatus] = useState<'checking' | 'connected' | 'disconnected'>('checking');
-  
-  // Garantir que os dados iniciais são carregados quando esta página é acessada
-  useEffect(() => {
-    console.log("DatabaseConnection page mounted - ensuring data is initialized");
-    
-    // Carregar configuração atual do banco de dados
-    const config = getDatabaseConfig();
-    setDbConfig(config);
-    
-    // Inicializar dados padrão
-    initializeDefaultData();
-    
-    // Verificar se o banco de dados está conectado
-    const isConnected = isDatabaseConnected();
-    setConnectionStatus(isConnected ? 'connected' : 'disconnected');
-    
-    // Simular carregamento para uma melhor experiência do usuário
-    const timer = setTimeout(() => {
-      setIsInitializing(false);
-      
-      toast({
-        title: "Verificação de dados concluída",
-        description: "Verificação da configuração do banco de dados concluída.",
-      });
-    }, 1000);
-    
-    return () => clearTimeout(timer);
-  }, [toast]);
-
-  const handleRefresh = () => {
-    setIsInitializing(true);
-    initializeDefaultData();
-    
-    const config = getDatabaseConfig();
-    setDbConfig(config);
-    
-    // Verificar se o banco de dados está conectado
-    const isConnected = isDatabaseConnected();
-    setConnectionStatus(isConnected ? 'connected' : 'disconnected');
-    
-    setTimeout(() => {
-      setIsInitializing(false);
-      
-      toast({
-        title: "Dados atualizados",
-        description: "A configuração do banco de dados foi recarregada.",
-      });
-    }, 1000);
-  };
-
   return (
     <div className="container mx-auto py-6 px-4">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Conexão ao Banco de Dados</h1>
+        <h1 className="text-2xl font-bold">Configuração de Banco de Dados</h1>
         <div className="flex space-x-2">
           <Link to="/">
             <Button variant="outline" size="sm">
@@ -81,33 +23,27 @@ const DatabaseConnection = () => {
               Voltar
             </Button>
           </Link>
-          <Button variant="outline" size="sm" onClick={handleRefresh}>
-            <RefreshCw size={16} className="mr-2" />
-            Recarregar
-          </Button>
         </div>
       </div>
       
-      {isInitializing ? (
-        <div className="flex flex-col items-center justify-center py-12">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-red-700 border-t-transparent"></div>
-          <p className="mt-4 text-gray-600">Verificando configuração do banco de dados...</p>
-        </div>
-      ) : (
-        <>
-          {connectionStatus === 'connected' && (
-            <Alert className="mb-6 bg-green-50 border-green-200">
-              <Database className="h-5 w-5 text-green-600" />
-              <AlertTitle className="text-green-700">Conexão Ativa</AlertTitle>
-              <AlertDescription className="text-green-600">
-                Você já está conectado ao banco de dados em {dbConfig?.host}:{dbConfig?.port}.
-              </AlertDescription>
-            </Alert>
-          )}
-          
-          <DatabaseConnectionForm />
-        </>
-      )}
+      <Alert className="bg-blue-50 border-blue-200">
+        <AlertCircle className="h-5 w-5 text-blue-600" />
+        <AlertTitle className="text-blue-700">Migração para Backend Real</AlertTitle>
+        <AlertDescription className="text-blue-600">
+          <div className="space-y-2">
+            <p>Esta página foi simplificada. Para implementar um backend real com SQLite:</p>
+            <ol className="list-decimal ml-4 space-y-1">
+              <li>Configure um container Docker com Node.js</li>
+              <li>Instale SQLite no container</li>
+              <li>Crie uma API REST para gerenciar os dados</li>
+              <li>Conecte o frontend à API</li>
+            </ol>
+            <p className="mt-3 font-medium">
+              Atualmente, os dados estão sendo salvos apenas no localStorage do navegador.
+            </p>
+          </div>
+        </AlertDescription>
+      </Alert>
     </div>
   );
 };

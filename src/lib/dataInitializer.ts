@@ -1,8 +1,6 @@
 
 import { INITIAL_DATA_LOADED_KEY, CHECKLIST_STORE_KEY } from "./types";
-import { getChecklistState } from "./checklistState";
-import { initialChecklistState, defaultDbConfig } from "./types";
-import { getDatabaseConfig } from "./databaseConfig";
+import { initialChecklistState } from "./types";
 
 // Função de força bruta para reinicializar equipamentos
 export const forceEquipmentInitialization = async () => {
@@ -15,12 +13,6 @@ export const forceEquipmentInitialization = async () => {
     console.error("Failed to force equipment initialization:", error);
     return [];
   }
-};
-
-// Verificar se o banco de dados está conectado
-export const isDatabaseConnected = (): boolean => {
-  const dbConfig = getDatabaseConfig();
-  return dbConfig.connectionSuccess;
 };
 
 // Garantir que os dados iniciais sejam armazenados
@@ -134,12 +126,6 @@ export const initializeDefaultData = () => {
   if (!localStorage.getItem(CHECKLIST_STORE_KEY)) {
     console.log("No checklist state found, initializing with default state");
     localStorage.setItem(CHECKLIST_STORE_KEY, JSON.stringify(initialChecklistState));
-  }
-  
-  // Verificar configuração do banco de dados
-  if (!localStorage.getItem("gearcheck-db-config")) {
-    console.log("No database config found, initializing with default config");
-    localStorage.setItem("gearcheck-db-config", JSON.stringify(defaultDbConfig));
   }
   
   function checkInitializationComplete() {

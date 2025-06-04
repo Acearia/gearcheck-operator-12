@@ -14,7 +14,6 @@ import {
   Menu, 
   X,
   ArrowLeft,
-  Database,
   Briefcase,
   CheckSquare
 } from "lucide-react";
@@ -126,7 +125,6 @@ const AdminLayout = () => {
               <SidebarLink to="/admin/operators" icon={<User size={20} />} label="Operadores" />
               <SidebarLink to="/admin/equipment" icon={<Wrench size={20} />} label="Equipamentos" />
               <SidebarLink to="/admin/reports" icon={<BarChart3 size={20} />} label="Relatórios" />
-              <SidebarLink to="/admin/database" icon={<Database size={20} />} label="Banco de Dados" />
               <SidebarLink to="/admin/settings" icon={<Settings size={20} />} label="Configurações" />
             </div>
           </nav>
