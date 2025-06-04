@@ -13,8 +13,6 @@ import ChecklistEquipmentSelect from "@/components/checklist/ChecklistEquipmentS
 import ChecklistItems from "@/components/checklist/ChecklistItems";
 import ChecklistPhotoUpload from "@/components/checklist/ChecklistPhotoUpload";
 import ChecklistComments from "@/components/checklist/ChecklistComments";
-import ChecklistDbAlert from "@/components/checklist/ChecklistDbAlert";
-import ChecklistDebugInfo from "@/components/checklist/ChecklistDebugInfo";
 import { useChecklistData } from "@/hooks/useChecklistData";
 
 const Checklist = () => {
@@ -24,9 +22,7 @@ const Checklist = () => {
     operators, 
     setOperators, 
     equipments, 
-    isLoadingData, 
-    dbConnectionStatus, 
-    handleImportOperators 
+    isLoadingData
   } = useChecklistData();
   
   const [selectedOperator, setSelectedOperator] = useState<Operator | null>(null);
@@ -68,7 +64,6 @@ const Checklist = () => {
   );
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [showDebugInfo, setShowDebugInfo] = useState(false);
   
   // State for photos and comments
   const [photos, setPhotos] = useState<{ id: string, data: string }[]>([]);
@@ -142,15 +137,6 @@ const Checklist = () => {
 
   const handleRemovePhoto = (id: string) => {
     setPhotos(prev => prev.filter(photo => photo.id !== id));
-  };
-
-  // Toggle debug information visibility
-  const toggleDebugInfo = () => {
-    setShowDebugInfo(!showDebugInfo);
-  };
-
-  const handleDatabaseConfig = () => {
-    navigate('/admin/database');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -231,10 +217,6 @@ const Checklist = () => {
         console.error("Error processing leader notifications:", error);
       }
 
-      if (dbConnectionStatus === 'connected') {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
-
       toast({
         title: "Checklist enviado com sucesso!",
         description: `Inspeção do equipamento ${selectedEquipment.name} registrada`,
@@ -268,21 +250,7 @@ const Checklist = () => {
   return (
     <div className="min-h-screen flex flex-col bg-white">
       <ChecklistHeader backUrl="/" />
-
-      <ChecklistDbAlert 
-        dbStatus={dbConnectionStatus} 
-        onConfigureDb={handleDatabaseConfig} 
-      />
       
-      <ChecklistDebugInfo
-        show={showDebugInfo}
-        operators={operators}
-        equipmentsCount={equipments.length}
-        isLoadingData={isLoadingData}
-        dbStatus={dbConnectionStatus}
-        onImportOperators={handleImportOperators}
-      />
-
       <div className="flex-1 p-4 max-w-3xl mx-auto w-full overflow-auto">
         <form onSubmit={handleSubmit}>
           <ChecklistOperatorSelect

@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Link } from "react-router-dom";
-import { ClipboardCheck, Settings, Briefcase } from "lucide-react";
+import { ClipboardCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,17 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 const Index = () => {
   return (
     <div className="min-h-screen flex flex-col bg-white">
-      <header className="bg-red-700 text-white px-4 py-3 shadow-md flex justify-between items-center">
-        <div className="text-white font-bold text-lg">GearCheck</div>
+      <header className="bg-red-700 text-white px-4 py-3 shadow-md flex justify-center items-center">
         <h1 className="font-bold text-lg">Inspeção de Equipamentos</h1>
-        <div className="flex gap-2">
-          <Link to="/leader/login" className="text-white">
-            <Briefcase size={24} />
-          </Link>
-          <Link to="/admin/login" className="text-white">
-            <Settings size={24} />
-          </Link>
-        </div>
       </header>
 
       <div className="flex-1 flex items-center justify-center p-4">
@@ -64,7 +55,6 @@ const Index = () => {
                   <Button 
                     className="w-full py-8 bg-blue-700 hover:bg-blue-800 text-white text-lg flex flex-col items-center gap-2"
                   >
-                    <Briefcase size={48} />
                     <span>Dashboard de Líderes</span>
                   </Button>
                 </Link>
@@ -83,10 +73,9 @@ const Index = () => {
                 <Link to="/admin/login">
                   <Button 
                     variant="outline" 
-                    className="w-full py-4 text-base flex justify-between items-center"
+                    className="w-full py-4 text-base flex justify-center items-center"
                   >
                     <span>Login Administrativo</span>
-                    <Settings size={20} />
                   </Button>
                 </Link>
               </CardContent>
