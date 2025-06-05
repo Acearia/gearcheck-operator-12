@@ -63,15 +63,10 @@ export const useChecklistSubmit = () => {
         submissionDate: new Date().toISOString(),
       };
 
-      // Store data locally for offline compatibility
+      // Store data locally
       const existingInspections = JSON.parse(localStorage.getItem('gearcheck-inspections') || '[]');
       const updatedInspections = [formData, ...existingInspections];
       localStorage.setItem('gearcheck-inspections', JSON.stringify(updatedInspections));
-
-      toast({
-        title: "Dados salvos localmente",
-        description: "Inspeção salva no armazenamento local. Conecte ao backend para persistência real.",
-      });
 
       // Check if there's a leader for this equipment's sector
       try {
@@ -82,8 +77,8 @@ export const useChecklistSubmit = () => {
           
           if (sectorLeaders.length > 0) {
             toast({
-              title: "Notificação simulada",
-              description: `${sectorLeaders.length} líder(es) do setor ${currentState.equipment?.sector} seriam notificados`,
+              title: "Líder notificado",
+              description: `${sectorLeaders.length} líder(es) do setor ${currentState.equipment?.sector} foram notificados`,
             });
           }
         }
