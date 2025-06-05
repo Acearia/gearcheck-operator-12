@@ -11,6 +11,7 @@ import AdminEquipment from "./pages/AdminEquipment";
 import AdminInspections from "./pages/AdminInspections";
 import AdminChecklistsOverview from "./pages/AdminChecklistsOverview";
 import AdminLeaderDashboard from "./pages/AdminLeaderDashboard"; 
+import AdminSectors from "./pages/AdminSectors";
 import AdminSettings from "./pages/AdminSettings";
 import AdminReports from "./pages/AdminReports";
 import LeaderLogin from "./pages/LeaderLogin";
@@ -46,6 +47,7 @@ function App() {
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<AdminDashboard />} />
+          <Route path="sectors" element={<AdminSectors />} />
           <Route path="operators" element={<AdminOperators />} />
           <Route path="equipment" element={<AdminEquipment />} />
           <Route path="inspections" element={<AdminInspections />} />

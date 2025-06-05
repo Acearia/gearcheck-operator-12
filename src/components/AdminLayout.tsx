@@ -15,7 +15,8 @@ import {
   X,
   ArrowLeft,
   Briefcase,
-  CheckSquare
+  CheckSquare,
+  Building2
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -119,6 +120,7 @@ const AdminLayout = () => {
           <nav className="p-4 flex flex-col h-full">
             <div className="space-y-1 flex-1">
               <SidebarLink to="/admin" icon={<Home size={20} />} label="Dashboard" />
+              <SidebarLink to="/admin/sectors" icon={<Building2 size={20} />} label="Setores" />
               <SidebarLink to="/admin/leaders" icon={<Briefcase size={20} />} label="Líderes" />
               <SidebarLink to="/admin/inspections" icon={<ClipboardList size={20} />} label="Inspeções" />
               <SidebarLink to="/admin/checklists" icon={<CheckSquare size={20} />} label="Visão Checklists" />
