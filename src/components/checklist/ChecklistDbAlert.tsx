@@ -47,25 +47,8 @@ const ChecklistDbAlert: React.FC<ChecklistDbAlertProps> = ({ className = "" }) =
     }
   };
   
-  return (
-    <Alert className={`bg-orange-50 border-orange-200 ${className}`}>
-      <Download className="h-4 w-4 text-orange-600" />
-      <AlertTitle className="text-orange-700">Sistema Local Temporário</AlertTitle>
-      <AlertDescription className="flex justify-between items-center text-orange-600">
-        <span>Dados salvos localmente. Migre para o backend para persistência real.</span>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={handleOptimizeStorage}>
-            <Archive className="h-3 w-3 mr-1" />
-            Otimizar
-          </Button>
-          <Button variant="outline" size="sm" onClick={handleExportData}>
-            <Download className="h-3 w-3 mr-1" />
-            Backup
-          </Button>
-        </div>
-      </AlertDescription>
-    </Alert>
-  );
+  // Retorna null para esconder completamente o alerta
+  return null;
 };
 
 export default ChecklistDbAlert;
